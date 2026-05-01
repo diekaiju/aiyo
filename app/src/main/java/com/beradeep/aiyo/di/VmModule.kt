@@ -17,11 +17,13 @@ constructor(
     apiKeyRepository: ApiKeyRepository,
     chatRepository: ChatRepository,
     modelRepository: ModelRepository,
+    settingRepository: SettingRepository,
     apiClient: ApiClient
 ) : ChatViewModel(
     apiKeyRepository = apiKeyRepository,
     chatRepository = chatRepository,
     modelRepository = modelRepository,
+    settingRepository = settingRepository,
     apiClient = apiClient
 )
 

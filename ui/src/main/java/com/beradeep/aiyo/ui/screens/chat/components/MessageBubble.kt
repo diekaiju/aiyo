@@ -8,7 +8,10 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.text.TextStyle
+import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import com.beradeep.aiyo.ui.LocalTypography
 import com.beradeep.aiyo.ui.basics.components.Text
 import com.beradeep.aiyo.ui.basics.components.card.Card
@@ -21,11 +24,12 @@ import com.mikepenz.markdown.compose.elements.highlightedCodeFence
 import com.mikepenz.markdown.model.State
 
 @Composable
-fun MessageBubble(content: String, isUser: Boolean, markdownState: State) {
+fun MessageBubble(content: String, isUser: Boolean, markdownState: State, fontSize: Int) {
     Column(
         modifier = Modifier.fillMaxWidth(),
         horizontalAlignment = if (isUser) Alignment.End else Alignment.Start
     ) {
+        val textStyle = LocalTypography.current.body1.withFontSize(fontSize)
         val modifier =
             if (isUser) {
                 Modifier.fillMaxWidth(0.9f)
@@ -35,7 +39,7 @@ fun MessageBubble(content: String, isUser: Boolean, markdownState: State) {
         if (isUser) {
             Card(modifier, shape = MessageBubbleDefaults.UserBubbleShape) {
                 Box(Modifier.padding(12.dp)) {
-                    Text(text = content, style = LocalTypography.current.body1)
+                    Text(text = content, style = textStyle)
                 }
             }
         } else {
@@ -43,23 +47,46 @@ fun MessageBubble(content: String, isUser: Boolean, markdownState: State) {
                 Markdown(
                     markdownState,
                     markdownColor(),
-                    markdownTypography(),
+                    markdownTypography(
+                        h1 = LocalTypography.current.h1.withFontSize(fontSize + 8),
+                        h2 = LocalTypography.current.h2.withFontSize(fontSize + 6),
+                        h3 = LocalTypography.current.h3.withFontSize(fontSize + 4),
+                        h4 = LocalTypography.current.h4.withFontSize(fontSize + 2),
+                        h5 = textStyle,
+                        h6 = textStyle,
+                        text = textStyle,
+                        code = textStyle.copy(fontFamily = FontFamily.Monospace),
+                        inlineCode = textStyle.copy(fontFamily = FontFamily.Monospace),
+                        quote = textStyle,
+                        paragraph = textStyle,
+                        ordered = textStyle,
+                        bullet = textStyle,
+                        list = textStyle,
+                        table = textStyle
+                    ),
                     components =
                     markdownComponents(
                         codeBlock = highlightedCodeBlock,
                         codeFence = highlightedCodeFence
                     ),
-                    loading = { Text(text = content, style = LocalTypography.current.body1) },
+                    loading = { Text(text = content, style = textStyle) },
                     error = {
                         Text(
                             text = "Parse error: ${(markdownState as? State.Error)?.result}",
-                            style = LocalTypography.current.body1
+                            style = textStyle
                         )
                     }
                 )
             }
         }
     }
+}
+
+private fun TextStyle.withFontSize(fontSize: Int): TextStyle {
+    return copy(
+        fontSize = fontSize.sp,
+        lineHeight = (fontSize + 8).sp
+    )
 }
 
 object MessageBubbleDefaults {

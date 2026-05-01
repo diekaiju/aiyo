@@ -19,6 +19,7 @@ import androidx.compose.material.icons.automirrored.rounded.ArrowBack
 import androidx.compose.material.icons.filled.InvertColors
 import androidx.compose.material.icons.filled.Key
 import androidx.compose.material.icons.filled.ModelTraining
+import androidx.compose.material.icons.filled.FormatSize
 import androidx.compose.material.icons.rounded.Visibility
 import androidx.compose.material.icons.rounded.VisibilityOff
 import androidx.compose.material3.MaterialTheme
@@ -39,9 +40,11 @@ import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.beradeep.aiyo.domain.model.Model
 import com.beradeep.aiyo.domain.model.ThemeType
+import com.beradeep.aiyo.domain.repository.SettingRepository
 import com.beradeep.aiyo.ui.AiyoTheme
 import com.beradeep.aiyo.ui.DarkColors
 import com.beradeep.aiyo.ui.LightColors
@@ -52,11 +55,13 @@ import com.beradeep.aiyo.ui.basics.components.Icon
 import com.beradeep.aiyo.ui.basics.components.IconButton
 import com.beradeep.aiyo.ui.basics.components.IconButtonVariant
 import com.beradeep.aiyo.ui.basics.components.Scaffold
+import com.beradeep.aiyo.ui.basics.components.Slider
 import com.beradeep.aiyo.ui.basics.components.Text
 import com.beradeep.aiyo.ui.basics.components.textfield.OutlinedTextField
 import com.beradeep.aiyo.ui.basics.components.topbar.TopBar
 import com.beradeep.aiyo.ui.screens.chat.components.ModelSelectorChip
 import com.beradeep.aiyo.ui.screens.components.ModelSelectionSheet
+import kotlin.math.roundToInt
 
 @Composable
 fun SettingsScreen(
@@ -141,6 +146,35 @@ fun SettingsScreen(
             )
 
             SettingsSection(
+                title = "Typography Configuration",
+                icon = Icons.Filled.FormatSize
+            ) {
+                FontSizeSetting(
+                    label = "Request Font Size",
+                    description = "Used while writing requests and for your sent messages.",
+                    fontSize = uiState.requestFontSize,
+                    onFontSizeChanged = { fontSize ->
+                        viewModel.onUiEvent(SettingsUiEvent.OnUpdateRequestFontSize(fontSize))
+                    }
+                )
+                Spacer(modifier = Modifier.height(16.dp))
+                FontSizeSetting(
+                    label = "Response Font Size",
+                    description = "Used for responses from the neural network.",
+                    fontSize = uiState.responseFontSize,
+                    onFontSizeChanged = { fontSize ->
+                        viewModel.onUiEvent(SettingsUiEvent.OnUpdateResponseFontSize(fontSize))
+                    }
+                )
+            }
+
+            HorizontalDivider(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(vertical = 16.dp)
+            )
+
+            SettingsSection(
                 title = "Theme Configuration",
                 icon = Icons.Filled.InvertColors
             ) {
@@ -199,6 +233,54 @@ private fun SettingsSection(
         }
         Spacer(modifier = Modifier.height(16.dp))
         content()
+    }
+}
+
+@Composable
+private fun FontSizeSetting(
+    label: String,
+    description: String,
+    fontSize: Int,
+    onFontSizeChanged: (Int) -> Unit
+) {
+    Column(
+        modifier = Modifier.fillMaxWidth()
+    ) {
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Column(modifier = Modifier.weight(1f)) {
+                Text(
+                    text = label,
+                    style = LocalTypography.current.body1
+                )
+                Text(
+                    text = description,
+                    color = AiyoTheme.colors.textSecondary,
+                    style = AiyoTheme.typography.body3
+                )
+            }
+            Text(
+                text = "$fontSize sp",
+                color = AiyoTheme.colors.textSecondary,
+                style = LocalTypography.current.label1
+            )
+        }
+        Slider(
+            value = fontSize.toFloat(),
+            onValueChange = { value -> onFontSizeChanged(value.roundToInt()) },
+            valueRange = SettingRepository.MIN_FONT_SIZE.toFloat()..SettingRepository.MAX_FONT_SIZE.toFloat(),
+            steps = SettingRepository.MAX_FONT_SIZE - SettingRepository.MIN_FONT_SIZE - 1
+        )
+        Text(
+            text = "The quick brown fox jumps over the lazy dog.",
+            style = LocalTypography.current.body1.copy(
+                fontSize = fontSize.sp,
+                lineHeight = (fontSize + 8).sp
+            )
+        )
     }
 }
 

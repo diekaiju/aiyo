@@ -321,7 +321,13 @@ private fun ChatScreen(
                                     MessageBubble(
                                         content = msg.content.toString(),
                                         isUser = msg.isUser,
-                                        markdownState = msg.markdownState
+                                        markdownState = msg.markdownState,
+                                        fontSize =
+                                        if (msg.isUser) {
+                                            uiState.requestFontSize
+                                        } else {
+                                            uiState.responseFontSize
+                                        }
                                     )
                                 }
                             }
@@ -335,7 +341,12 @@ private fun ChatScreen(
                         uiState.streamingResponse?.let { content ->
                             item {
                                 Spacer(modifier = Modifier.height(8.dp))
-                                MessageBubble(content = content, isUser = false, State.Loading())
+                                MessageBubble(
+                                    content = content,
+                                    isUser = false,
+                                    markdownState = State.Loading(),
+                                    fontSize = uiState.responseFontSize
+                                )
                             }
                         }
                     }
@@ -355,7 +366,8 @@ private fun ChatScreen(
                             uiState.isLoadingResponse || uiState.isStreamingResponse,
                             onReason = { onUiEvent(ChatUiEvent.OnReason(it)) },
                             reasonEffort = uiState.reasoningEffort,
-                            onStopRequest = { onUiEvent(ChatUiEvent.OnStopRequest) }
+                            onStopRequest = { onUiEvent(ChatUiEvent.OnStopRequest) },
+                            fontSize = uiState.requestFontSize
                         )
                     }
                 }

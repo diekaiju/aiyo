@@ -20,6 +20,7 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.unit.DpSize
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import com.beradeep.aiyo.domain.model.Reason
 import com.beradeep.aiyo.ui.AiyoTheme
 import com.beradeep.aiyo.ui.R
@@ -45,13 +46,19 @@ fun RowScope.ChatInputTextField(
     onWebSearch: () -> Unit,
     onReason: (Reason) -> Unit,
     isWebSearchEnabled: Boolean,
-    isLoadingOrStreamingResponse: Boolean
+    isLoadingOrStreamingResponse: Boolean,
+    fontSize: Int
 ) {
     val tooltipState = rememberTooltipState(isPersistent = true)
+    val inputTextStyle = AiyoTheme.typography.input.copy(
+        fontSize = fontSize.sp,
+        lineHeight = (fontSize + 8).sp
+    )
     TextField(
         value = value,
         onValueChange = onValueChange,
         modifier = modifier.weight(1f),
+        textStyle = inputTextStyle,
         singleLine = false,
         maxLines = 3,
         keyboardOptions = KeyboardOptions(imeAction = ImeAction.Default),
@@ -138,7 +145,7 @@ fun RowScope.ChatInputTextField(
                 }
             }
         },
-        placeholder = { Text(text = "Type a message...") },
+        placeholder = { Text(text = "Type a message...", style = inputTextStyle) },
         shape = CircleShape
     )
 }

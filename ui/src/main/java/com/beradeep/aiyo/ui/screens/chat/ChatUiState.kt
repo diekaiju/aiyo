@@ -4,6 +4,7 @@ import androidx.compose.runtime.Immutable
 import com.beradeep.aiyo.domain.model.Conversation
 import com.beradeep.aiyo.domain.model.Model
 import com.beradeep.aiyo.domain.model.Reason
+import com.beradeep.aiyo.domain.repository.SettingRepository
 import com.mikepenz.markdown.model.State
 
 @Immutable
@@ -18,6 +19,8 @@ data class ChatUiState(
     val inputText: String,
     val isWebSearchEnabled: Boolean,
     val reasoningEffort: Reason,
+    val requestFontSize: Int,
+    val responseFontSize: Int,
     val messages: List<UiMessage>,
     val conversations: List<Conversation>,
     val conversationFilter: ConversationFilter
@@ -39,6 +42,8 @@ data class ChatUiState(
                 inputText = "",
                 isWebSearchEnabled = false,
                 reasoningEffort = Reason.None,
+                requestFontSize = SettingRepository.DEFAULT_REQUEST_FONT_SIZE,
+                responseFontSize = SettingRepository.DEFAULT_RESPONSE_FONT_SIZE,
                 messages = emptyList(),
                 conversations = emptyList(),
                 conversationFilter = ConversationFilter.RECENT

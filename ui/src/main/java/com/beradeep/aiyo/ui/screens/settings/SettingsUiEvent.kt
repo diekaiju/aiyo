@@ -10,4 +10,6 @@ sealed class SettingsUiEvent {
     object OnDismissModelSelectionSheet : SettingsUiEvent()
 
     data class OnUpdateThemeType(val themeType: ThemeType) : SettingsUiEvent()
+    data class OnUpdateRequestFontSize(val fontSize: Int) : SettingsUiEvent()
+    data class OnUpdateResponseFontSize(val fontSize: Int) : SettingsUiEvent()
 }

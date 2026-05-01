@@ -41,11 +41,14 @@ open class SettingsViewModel(
             SettingsUiEvent.OnShowModelSelectionSheet -> showModelSelectionSheet()
             SettingsUiEvent.OnDismissModelSelectionSheet -> dismissModelSelectionSheet()
             is SettingsUiEvent.OnUpdateThemeType -> setThemeType(settingsUiEvent.themeType)
+            is SettingsUiEvent.OnUpdateRequestFontSize -> setRequestFontSize(settingsUiEvent.fontSize)
+            is SettingsUiEvent.OnUpdateResponseFontSize -> setResponseFontSize(settingsUiEvent.fontSize)
         }
     }
 
     private fun loadInitialState() {
         loadThemeType()
+        loadFontSizes()
         loadApiKey()
         loadDefaultModel()
         fetchModels()
@@ -54,6 +57,17 @@ open class SettingsViewModel(
     private fun loadThemeType() {
         viewModelScope.launch {
             _uiState.update { it.copy(themeType = settingsRepository.getThemeType()) }
+        }
+    }
+
+    private fun loadFontSizes() {
+        viewModelScope.launch {
+            _uiState.update {
+                it.copy(
+                    requestFontSize = settingsRepository.getRequestFontSize(),
+                    responseFontSize = settingsRepository.getResponseFontSize()
+                )
+            }
         }
     }
 
@@ -74,6 +88,20 @@ open class SettingsViewModel(
         viewModelScope.launch {
             settingsRepository.setThemeType(themeType)
             _uiState.update { it.copy(themeType = themeType) }
+        }
+    }
+
+    private fun setRequestFontSize(fontSize: Int) {
+        viewModelScope.launch {
+            settingsRepository.setRequestFontSize(fontSize)
+            _uiState.update { it.copy(requestFontSize = settingsRepository.getRequestFontSize()) }
+        }
+    }
+
+    private fun setResponseFontSize(fontSize: Int) {
+        viewModelScope.launch {
+            settingsRepository.setResponseFontSize(fontSize)
+            _uiState.update { it.copy(responseFontSize = settingsRepository.getResponseFontSize()) }
         }
     }
 

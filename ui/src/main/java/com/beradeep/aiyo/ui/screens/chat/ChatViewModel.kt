@@ -14,6 +14,7 @@ import com.beradeep.aiyo.domain.model.Role
 import com.beradeep.aiyo.domain.repository.ApiKeyRepository
 import com.beradeep.aiyo.domain.repository.ChatRepository
 import com.beradeep.aiyo.domain.repository.ModelRepository
+import com.beradeep.aiyo.domain.repository.SettingRepository
 import com.mikepenz.markdown.model.parseMarkdownFlow
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
@@ -36,6 +37,7 @@ open class ChatViewModel(
     private val apiKeyRepository: ApiKeyRepository,
     private val chatRepository: ChatRepository,
     private val modelRepository: ModelRepository,
+    private val settingRepository: SettingRepository,
     private val apiClient: ApiClient
 ) : ViewModel() {
     private val messages = mutableStateListOf<UiMessage>()
@@ -62,6 +64,7 @@ open class ChatViewModel(
             )
         }.onStart {
             loadApiKey()
+            observeFontSizes()
             loadDefaultModel()
             fetchModels()
         }.stateIn(
@@ -72,6 +75,7 @@ open class ChatViewModel(
 
     private val preloadJobs = mutableIntObjectMapOf<Job>()
     private var responseJob: Job? = null
+    private var isObservingFontSizes = false
 
     fun onUiEvent(chatUiEvent: ChatUiEvent) {
         when (chatUiEvent) {
@@ -132,6 +136,22 @@ open class ChatViewModel(
 
     private fun loadApiKey() {
         _uiState.update { it.copy(apiKey = apiKeyRepository.getApiKey()) }
+    }
+
+    private fun observeFontSizes() {
+        if (isObservingFontSizes) return
+        isObservingFontSizes = true
+
+        viewModelScope.launch {
+            settingRepository.getRequestFontSizeFlow().collect { fontSize ->
+                _uiState.update { it.copy(requestFontSize = fontSize) }
+            }
+        }
+        viewModelScope.launch {
+            settingRepository.getResponseFontSizeFlow().collect { fontSize ->
+                _uiState.update { it.copy(responseFontSize = fontSize) }
+            }
+        }
     }
 
     private fun loadDefaultModel() {
