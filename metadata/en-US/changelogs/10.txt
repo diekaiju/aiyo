@@ -1,0 +1,2 @@
+- v1.0.9
+- fix table content overflow and update theme selection pill corner radius
