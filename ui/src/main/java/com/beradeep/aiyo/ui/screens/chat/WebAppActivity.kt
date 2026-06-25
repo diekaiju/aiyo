@@ -22,7 +22,7 @@ class WebAppActivity : ComponentActivity() {
 
         val filePath = intent.getStringExtra("FILE_PATH")
         val conversationId = intent.getStringExtra("CONVERSATION_ID") ?: ""
-        
+
         val htmlContent = if (filePath != null) {
             val file = File(filePath)
             if (file.exists()) file.readText() else "<h1>Error: Web app file missing</h1>"
