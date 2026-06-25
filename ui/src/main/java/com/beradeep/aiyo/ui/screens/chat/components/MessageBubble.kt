@@ -9,9 +9,23 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.TextStyle
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.width
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.rounded.AddHome
+import androidx.compose.material.icons.rounded.PlayArrow
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.beradeep.aiyo.ui.basics.components.Button
+import com.beradeep.aiyo.ui.basics.components.ButtonVariant
+import com.beradeep.aiyo.ui.basics.components.Icon
 import com.beradeep.aiyo.ui.LocalTypography
 import com.beradeep.aiyo.ui.basics.components.Text
 import com.beradeep.aiyo.ui.basics.components.card.Card
@@ -29,7 +43,16 @@ import com.mikepenz.markdown.compose.elements.highlightedCodeFence
 import com.mikepenz.markdown.model.State
 
 @Composable
-fun MessageBubble(content: String, isUser: Boolean, markdownState: State, fontSize: Int) {
+fun MessageBubble(content: String, isUser: Boolean, markdownState: State, fontSize: Int, conversationId: String = "") {
+    val context = androidx.compose.ui.platform.LocalContext.current
+    var showPreview by remember { mutableStateOf(false) }
+    val htmlRegex = Regex("```html\\s*(.*?)\\s*```", RegexOption.DOT_MATCHES_ALL)
+    val htmlContent = htmlRegex.find(content)?.groups?.get(1)?.value
+
+    if (showPreview && htmlContent != null) {
+        HtmlPreviewDialog(htmlContent = htmlContent, conversationId = conversationId, onDismiss = { showPreview = false })
+    }
+
     Column(
         modifier = Modifier.fillMaxWidth(),
         horizontalAlignment = if (isUser) Alignment.End else Alignment.Start
@@ -48,8 +71,12 @@ fun MessageBubble(content: String, isUser: Boolean, markdownState: State, fontSi
                 }
             }
         } else {
-            Box(modifier.padding(12.dp)) {
-                Markdown(
+            Column(modifier.padding(12.dp)) {
+                val isFinished = markdownState !is State.Loading
+                var isCodeExpanded by remember(isFinished) { mutableStateOf(!isFinished) }
+
+                if (htmlContent == null || isCodeExpanded) {
+                    Markdown(
                     markdownState,
                     markdownColor(),
                     markdownTypography(
@@ -78,6 +105,49 @@ fun MessageBubble(content: String, isUser: Boolean, markdownState: State, fontSi
                         )
                     }
                 )
+                }
+
+                if (htmlContent != null) {
+                    Spacer(Modifier.height(12.dp))
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = androidx.compose.foundation.layout.Arrangement.spacedBy(8.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Button(
+                            onClick = { isCodeExpanded = !isCodeExpanded },
+                            modifier = Modifier.weight(1f),
+                            variant = com.beradeep.aiyo.ui.basics.components.ButtonVariant.PrimaryGhost
+                        ) {
+                            Text(if (isCodeExpanded) "Hide Code" else "Show Code")
+                        }
+
+                        Button(
+                            onClick = { showPreview = true },
+                            modifier = Modifier.weight(1f),
+                            variant = ButtonVariant.PrimaryElevated
+                        ) {
+                            Row(verticalAlignment = Alignment.CenterVertically) {
+                                Icon(Icons.Rounded.PlayArrow)
+                                Spacer(Modifier.width(8.dp))
+                                Text("Run App")
+                            }
+                        }
+
+                        com.beradeep.aiyo.ui.basics.components.IconButton(
+                            onClick = {
+                                com.beradeep.aiyo.ui.screens.chat.utils.ShortcutHelper.addWebAppToHomeScreen(
+                                    context = context,
+                                    htmlContent = htmlContent,
+                                    conversationId = conversationId
+                                )
+                            },
+                            variant = com.beradeep.aiyo.ui.basics.components.IconButtonVariant.PrimaryGhost
+                        ) {
+                            Icon(Icons.Rounded.AddHome, contentDescription = "Add to Home Screen")
+                        }
+                    }
+                }
             }
         }
     }

@@ -327,7 +327,8 @@ private fun ChatScreen(
                                             uiState.requestFontSize
                                         } else {
                                             uiState.responseFontSize
-                                        }
+                                        },
+                                        conversationId = uiState.selectedConversation?.id?.toString() ?: ""
                                     )
                                 }
                             }
@@ -345,7 +346,8 @@ private fun ChatScreen(
                                     content = content,
                                     isUser = false,
                                     markdownState = State.Loading(),
-                                    fontSize = uiState.responseFontSize
+                                    fontSize = uiState.responseFontSize,
+                                    conversationId = uiState.selectedConversation?.id?.toString() ?: ""
                                 )
                             }
                         }

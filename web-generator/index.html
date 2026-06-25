@@ -1,0 +1,248 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Aiyo App Studio - Android Web App Generator</title>
+    <!-- Google Fonts for premium typography -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&family=Space+Grotesk:wght@400;500;600;700&family=Fira+Code:wght@400;500&display=swap" rel="stylesheet">
+    <!-- FontAwesome for icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Core CSS stylesheet -->
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="app-container">
+        <!-- Sidebar Controls -->
+        <aside class="sidebar">
+            <div class="sidebar-header">
+                <div class="logo">
+                    <span class="logo-icon"><i class="fa-solid fa-wand-magic-sparkles"></i></span>
+                    <span class="logo-text">Aiyo Studio</span>
+                </div>
+                <div class="badge">v1.0</div>
+            </div>
+
+            <div class="sidebar-content">
+                <!-- API Setup Section -->
+                <div class="config-section">
+                    <div class="section-title">
+                        <span><i class="fa-solid fa-key"></i> API Configuration</span>
+                    </div>
+                    <div class="input-group">
+                        <label for="api-key">OpenRouter API Key</label>
+                        <div class="password-wrapper">
+                            <input type="password" id="api-key" placeholder="sk-or-v1-..." autocomplete="off">
+                            <button id="toggle-key-visibility" class="icon-btn" title="Toggle visibility">
+                                <i class="fa-solid fa-eye"></i>
+                            </button>
+                        </div>
+                        <div class="helper-text">Keys are stored locally in your browser.</div>
+                    </div>
+                    <div class="input-group">
+                        <label for="model-select">AI Model</label>
+                        <div class="select-wrapper">
+                            <select id="model-select">
+                                <option value="google/gemini-2.5-flash" selected>Gemini 2.5 Flash (Fast, Recommended)</option>
+                                <option value="google/gemini-2.5-pro">Gemini 2.5 Pro (High Quality)</option>
+                                <option value="meta-llama/llama-3.3-70b-instruct">Llama 3.3 70B Instruct</option>
+                                <option value="deepseek/deepseek-chat">DeepSeek V3 (Coder)</option>
+                                <option value="anthropic/claude-3.5-sonnet">Claude 3.5 Sonnet</option>
+                                <option value="custom">-- Custom Model ID --</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="input-group hidden" id="custom-model-group">
+                        <label for="custom-model-input">Custom OpenRouter Model ID</label>
+                        <input type="text" id="custom-model-input" placeholder="e.g. mistralai/mistral-large">
+                    </div>
+                </div>
+
+                <!-- Template Presets Section -->
+                <div class="config-section">
+                    <div class="section-title">
+                        <span><i class="fa-solid fa-cubes"></i> App Templates</span>
+                    </div>
+                    <div class="templates-grid">
+                        <button class="template-btn" data-prompt="A minimalist Pomodoro focus timer with a clean circular countdown animation, customizable focus/break duration settings, custom study tags (e.g. Coding, Reading, Writing), history list showing completed sessions, and immersive audio alarms/ticking.">
+                            <span class="template-icon">⏱️</span>
+                            <span class="template-name">Pomodoro Focus</span>
+                        </button>
+                        <button class="template-btn" data-prompt="A personal budget and expense manager. Includes a dashboard with interactive summary cards (Total Balance, Income, Expenses), categories with customizable budgets (Food, Rent, Fun), an easy Add Transaction dialog, list of recent history with category icons, and local data persistence.">
+                            <span class="template-icon">💵</span>
+                            <span class="template-name">Budget Manager</span>
+                        </button>
+                        <button class="template-btn" data-prompt="A minimalist daily habit checklist tracker. Includes adding habits with target weekly frequency (e.g., 5 times a week), calendar grid/streaks visualizations, sound effect upon completing a habit, nice success animations, and progress circular rings for daily status.">
+                            <span class="template-icon">📅</span>
+                            <span class="template-name">Habit Tracker</span>
+                        </button>
+                        <button class="template-btn" data-prompt="A Recipe book & Meal planner app. Users can search recipes, filter by diet tags (Vegan, Keto), generate shopping lists with checkable items, and add custom recipes.">
+                            <span class="template-icon">🥗</span>
+                            <span class="template-name">Recipe & Meals</span>
+                        </button>
+                        <button class="template-btn" data-prompt="A daily workout checklist app. Includes pre-set routines (Push/Pull/Legs), timer for rest periods, interactive logging of reps/sets/weights, progress trackers, and custom exercise generator.">
+                            <span class="template-icon">🏋️</span>
+                            <span class="template-name">Workout Logger</span>
+                        </button>
+                        <button class="template-btn" data-prompt="A relaxing meditation companion app. Includes ambient sounds controls (Rain, Forest), breathing guides with expanding bubble visual helper, reflection log to record journals, and statistics.">
+                            <span class="template-icon">🧘</span>
+                            <span class="template-name">Mindfulness Guide</span>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Generation Console log -->
+                <div class="console-log-container hidden" id="log-panel">
+                    <div class="console-header">
+                        <span><i class="fa-solid fa-terminal"></i> Generation Progress</span>
+                        <span id="progress-percent">0%</span>
+                    </div>
+                    <div class="console-body" id="log-output">
+                        <!-- Steps will be dynamically output here -->
+                    </div>
+                </div>
+            </div>
+
+            <div class="sidebar-footer">
+                <button class="info-btn" id="show-help-btn"><i class="fa-solid fa-circle-info"></i> How it works</button>
+            </div>
+        </aside>
+
+        <!-- Main Workspace (Editor + Emulator) -->
+        <main class="workspace">
+            <div class="workspace-main">
+                <!-- Prompt Input Panel -->
+                <div class="panel prompt-panel">
+                    <div class="panel-header">
+                        <h2><i class="fa-solid fa-lightbulb"></i> Describe your App Idea</h2>
+                        <span class="char-count" id="prompt-char-count">0 chars</span>
+                    </div>
+                    <div class="panel-body">
+                        <textarea id="prompt-input" placeholder="Explain what your app should do... E.g., 'A gorgeous expense tracker with custom category filters and charts...'" maxlength="2000"></textarea>
+                        <div class="prompt-actions">
+                            <button id="clear-prompt-btn" class="secondary-btn"><i class="fa-solid fa-trash-can"></i> Clear</button>
+                            <button id="generate-btn" class="primary-btn"><i class="fa-solid fa-wand-magic-sparkles"></i> Generate App</button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Code Workspace Panel (Tab content) -->
+                <div class="panel code-panel">
+                    <div class="panel-header">
+                        <div class="tab-selectors">
+                            <button class="tab-btn active" data-tab="preview-tab"><i class="fa-solid fa-mobile-screen-button"></i> Device Preview</button>
+                            <button class="tab-btn" data-tab="code-tab"><i class="fa-solid fa-code"></i> Source Code</button>
+                            <button class="tab-btn" data-tab="prompt-tab"><i class="fa-solid fa-gears"></i> System Prompt</button>
+                        </div>
+                        <div class="code-actions hidden" id="code-actions-container">
+                            <button id="copy-code-btn" class="icon-text-btn"><i class="fa-solid fa-copy"></i> Copy</button>
+                            <button id="download-code-btn" class="icon-text-btn primary-sub"><i class="fa-solid fa-download"></i> Download</button>
+                        </div>
+                    </div>
+                    
+                    <div class="panel-body tabs-content">
+                        <!-- Live Device Tab -->
+                        <div class="tab-pane active" id="preview-tab">
+                            <div class="preview-placeholder" id="preview-placeholder">
+                                <div class="placeholder-content">
+                                    <i class="fa-solid fa-mobile-screen"></i>
+                                    <h3>Nothing generated yet</h3>
+                                    <p>Configure your OpenRouter API key, type an app idea or select a template, and click "Generate App".</p>
+                                </div>
+                            </div>
+                            <!-- Styled Phone Emulator Frame -->
+                            <div class="phone-frame-wrapper hidden" id="phone-wrapper">
+                                <div class="device-frame">
+                                    <!-- Volume buttons -->
+                                    <div class="device-button volume-up"></div>
+                                    <div class="device-button volume-down"></div>
+                                    <!-- Power button -->
+                                    <div class="device-button power"></div>
+                                    <!-- Screen outer -->
+                                    <div class="device-screen-container">
+                                        <!-- Notch/Camera -->
+                                        <div class="device-notch"></div>
+                                        <!-- Status bar (simulated) -->
+                                        <div class="device-status-bar">
+                                            <span class="status-time" id="emulator-time">12:30</span>
+                                            <div class="status-icons">
+                                                <i class="fa-solid fa-wifi"></i>
+                                                <i class="fa-solid fa-signal"></i>
+                                                <span class="battery-percent">92%</span>
+                                                <i class="fa-solid fa-battery-three-quarters"></i>
+                                            </div>
+                                        </div>
+                                        <!-- Interactive iframe screen -->
+                                        <iframe id="preview-iframe" title="Generated Android App Preview"></iframe>
+                                        <!-- Navigation bar (simulated Android pill) -->
+                                        <div class="device-navigation-bar">
+                                            <div class="device-home-pill"></div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Code Viewer Tab -->
+                        <div class="tab-pane" id="code-tab">
+                            <div class="code-container">
+                                <pre><code id="code-output" class="language-html">HTML code will appear here after generation...</code></pre>
+                            </div>
+                        </div>
+
+                        <!-- Prompt Customizer Tab -->
+                        <div class="tab-pane" id="prompt-tab">
+                            <div class="prompt-customizer-body">
+                                <h3>System Prompt Customization</h3>
+                                <p class="helper-text-block">This prompt is sent to the LLM to guide how it structures, designs, and codes the Android-themed web application. You can review and modify it below.</p>
+                                <textarea id="system-prompt-input" rows="18"></textarea>
+                                <div class="prompt-customizer-actions">
+                                    <button id="reset-system-prompt-btn" class="secondary-btn"><i class="fa-solid fa-rotate-left"></i> Reset to Default</button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <!-- Help Modal -->
+    <div class="modal-overlay hidden" id="help-modal">
+        <div class="modal">
+            <div class="modal-header">
+                <h3><i class="fa-solid fa-circle-question"></i> How Aiyo Studio Works</h3>
+                <button class="modal-close" id="close-help-btn"><i class="fa-solid fa-xmark"></i></button>
+            </div>
+            <div class="modal-body">
+                <ol class="help-list">
+                    <li>
+                        <strong>Configure API Access:</strong>
+                        <p>Generate an API key from <a href="https://openrouter.ai/keys" target="_blank" rel="noopener">OpenRouter</a> and paste it into the configuration panel. Keys are saved locally in browser storage.</p>
+                    </li>
+                    <li>
+                        <strong>Select a Model:</strong>
+                        <p>Choose an AI model. We recommend <code>google/gemini-2.5-flash</code> because it is extremely fast and writes accurate code.</p>
+                    </li>
+                    <li>
+                        <strong>Enter App Description:</strong>
+                        <p>Type in your custom app idea or click one of the preset templates (e.g. Pomodoro, Budget Manager). Be detailed about layouts and buttons you want.</p>
+                    </li>
+                    <li>
+                        <strong>Generate & Preview:</strong>
+                        <p>Click "Generate App". When complete, interact with the app in the mobile phone mockup. Switch to "Source Code" to copy/download the file!</p>
+                    </li>
+                </ol>
+                <div class="alert-info">
+                    <i class="fa-solid fa-circle-info"></i>
+                    <div>
+                        <strong>State Persistence Built-in:</strong> The generated code automatically saves state (like history, settings, logs) in the browser's <code>localStorage</code>, so your mock apps remain fully interactive even when run locally as a double-clicked file!
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</body>
+</html>

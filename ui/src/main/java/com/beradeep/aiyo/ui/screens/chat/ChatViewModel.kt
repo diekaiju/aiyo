@@ -196,11 +196,19 @@ open class ChatViewModel(
             val model =
                 uiState.value.selectedModel.takeIf { !uiState.value.isWebSearchEnabled }
                     ?: uiState.value.selectedModel.copy(id = uiState.value.selectedModel.id + ":online")
+
+            val systemInstruction = Message(
+                id = UUID.randomUUID(),
+                role = Role.System,
+                content = "You are an expert Android UI/UX designer and frontend developer. Generate a fully functional mobile web application based on the user's input. CRITICAL REQUIREMENTS: The app MUST be fully compatible and optimized for Android mobile devices. Use the proper <meta name=\"viewport\" content=\"width=device-width, initial-scale=1, maximum-scale=1, user-scalable=0\"> tag. Design the UI with Android Material Design 3 (Material You) styling. Ensure all buttons and interactive elements are touch-friendly. Do not use desktop-specific hover effects. DATABASE INTEGRATION: You MUST use the provided Android database interface for persistence. To save data (in JSON format ONLY), call `window.AndroidDB.saveData(jsonString)`. To load data, call `window.AndroidDB.loadData()` which returns a JSON string. DO NOT use standard localStorage. OUTPUT FORMAT: Output ONLY a single raw HTML code block containing all HTML, CSS, and JS. Do NOT write explanations. Return the code wrapped in ```html ... ```."
+            )
+            val apiMessages = listOf(systemInstruction) + messages.map(UiMessage::toMessage)
+
             val result =
                 chatRepository.getChatCompletionFlow(
                     apiKey = apiKey,
                     model = model,
-                    messages = messages.map(UiMessage::toMessage)
+                    messages = apiMessages
                 )
 
             result
