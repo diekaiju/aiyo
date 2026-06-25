@@ -327,8 +327,7 @@ private fun ChatScreen(
                                             uiState.requestFontSize
                                         } else {
                                             uiState.responseFontSize
-                                        },
-                                        conversationId = uiState.selectedConversation?.id?.toString() ?: ""
+                                        }
                                     )
                                 }
                             }
@@ -342,12 +341,27 @@ private fun ChatScreen(
                         uiState.streamingResponse?.let { content ->
                             item {
                                 Spacer(modifier = Modifier.height(8.dp))
+                                Row(
+                                    verticalAlignment = Alignment.CenterVertically,
+                                    modifier = Modifier.padding(start = 12.dp, bottom = 4.dp)
+                                ) {
+                                    androidx.compose.material3.CircularProgressIndicator(
+                                        modifier = Modifier.size(16.dp),
+                                        color = AiyoTheme.colors.tertiary,
+                                        strokeWidth = 2.dp
+                                    )
+                                    Spacer(modifier = Modifier.width(8.dp))
+                                    Text(
+                                        text = "Generating App...",
+                                        style = AiyoTheme.typography.body3,
+                                        color = AiyoTheme.colors.textSecondary
+                                    )
+                                }
                                 MessageBubble(
                                     content = content,
                                     isUser = false,
                                     markdownState = State.Loading(),
-                                    fontSize = uiState.responseFontSize,
-                                    conversationId = uiState.selectedConversation?.id?.toString() ?: ""
+                                    fontSize = uiState.responseFontSize
                                 )
                             }
                         }
@@ -386,7 +400,7 @@ private fun ChatScreen(
                             contentDescription = "Aiyo Icon"
                         )
                         Text(
-                            text = "Hello there! How can I assist you today?",
+                            text = "Hello there! What app or game should we build today?",
                             style = AiyoTheme.typography.body1,
                             color = AiyoTheme.colors.tertiary,
                             fontStyle = FontStyle.Italic

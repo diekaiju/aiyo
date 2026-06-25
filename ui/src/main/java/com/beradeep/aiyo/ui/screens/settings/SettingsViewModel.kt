@@ -43,6 +43,10 @@ open class SettingsViewModel(
             is SettingsUiEvent.OnUpdateThemeType -> setThemeType(settingsUiEvent.themeType)
             is SettingsUiEvent.OnUpdateRequestFontSize -> setRequestFontSize(settingsUiEvent.fontSize)
             is SettingsUiEvent.OnUpdateResponseFontSize -> setResponseFontSize(settingsUiEvent.fontSize)
+            is SettingsUiEvent.OnUpdateAppIcon -> {
+                com.beradeep.aiyo.ui.screens.settings.utils.IconHelper.setAppIcon(settingsUiEvent.context, settingsUiEvent.appIcon)
+                _uiState.update { it.copy(appIcon = settingsUiEvent.appIcon) }
+            }
         }
     }
 
@@ -144,5 +148,11 @@ open class SettingsViewModel(
 
     private fun dismissModelSelectionSheet() {
         _uiState.update { it.copy(showModelSelectionSheet = false) }
+    }
+
+    fun loadAppIcon(context: android.content.Context) {
+        _uiState.update {
+            it.copy(appIcon = com.beradeep.aiyo.ui.screens.settings.utils.IconHelper.getCurrentIcon(context))
+        }
     }
 }

@@ -145,7 +145,7 @@ fun RowScope.ChatInputTextField(
                 }
             }
         },
-        placeholder = { Text(text = "Type a message...", style = inputTextStyle) },
+        placeholder = { Text(text = "Describe your app or game...", style = inputTextStyle) },
         shape = CircleShape
     )
 }

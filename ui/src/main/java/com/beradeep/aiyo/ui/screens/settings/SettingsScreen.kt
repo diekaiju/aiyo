@@ -1,5 +1,7 @@
 package com.beradeep.aiyo.ui.screens.settings
 
+import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.Arrangement
@@ -21,6 +23,8 @@ import androidx.compose.material.icons.filled.FormatSize
 import androidx.compose.material.icons.filled.InvertColors
 import androidx.compose.material.icons.filled.Key
 import androidx.compose.material.icons.filled.ModelTraining
+import androidx.compose.material.icons.filled.Palette
+import androidx.compose.material.icons.rounded.Check
 import androidx.compose.material.icons.rounded.Visibility
 import androidx.compose.material.icons.rounded.VisibilityOff
 import androidx.compose.material3.MaterialTheme
@@ -28,6 +32,7 @@ import androidx.compose.material3.SegmentedButton
 import androidx.compose.material3.SegmentedButtonDefaults
 import androidx.compose.material3.SingleChoiceSegmentedButtonRow
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -37,6 +42,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.input.VisualTransformation
@@ -62,6 +68,7 @@ import com.beradeep.aiyo.ui.basics.components.textfield.OutlinedTextField
 import com.beradeep.aiyo.ui.basics.components.topbar.TopBar
 import com.beradeep.aiyo.ui.screens.chat.components.ModelSelectorChip
 import com.beradeep.aiyo.ui.screens.components.ModelSelectionSheet
+import com.beradeep.aiyo.ui.screens.settings.utils.IconHelper
 import kotlin.math.roundToInt
 
 @Composable
@@ -184,6 +191,36 @@ fun SettingsScreen(
                     selectedThemeType = uiState.themeType,
                     onUpdateThemeType = { newThemeType ->
                         viewModel.onUiEvent(SettingsUiEvent.OnUpdateThemeType(newThemeType))
+                    }
+                )
+            }
+
+            HorizontalDivider(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(vertical = 16.dp)
+            )
+
+            val context = LocalContext.current
+            LaunchedEffect(Unit) {
+                viewModel.loadAppIcon(context)
+            }
+
+            SettingsSection(
+                title = "App Icon Configuration",
+                icon = Icons.Filled.Palette
+            ) {
+                AppIconSelectionSetting(
+                    currentIcon = uiState.appIcon,
+                    onIconSelected = { newIcon ->
+                        if (newIcon != uiState.appIcon) {
+                            android.widget.Toast.makeText(
+                                context,
+                                "Applying ${newIcon.displayName}... App will close to update icon.",
+                                android.widget.Toast.LENGTH_LONG
+                            ).show()
+                            viewModel.onUiEvent(SettingsUiEvent.OnUpdateAppIcon(context, newIcon))
+                        }
                     }
                 )
             }
@@ -403,6 +440,78 @@ fun ThemeSelectionSetting(
                     text = themeType.name,
                     style = MaterialTheme.typography.bodyMedium
                 )
+            }
+        }
+    }
+}
+
+@Composable
+private fun AppIconSelectionSetting(
+    currentIcon: IconHelper.AppIcon,
+    onIconSelected: (IconHelper.AppIcon) -> Unit
+) {
+    Column(
+        modifier = Modifier.fillMaxWidth(),
+        verticalArrangement = Arrangement.spacedBy(8.dp)
+    ) {
+        IconHelper.AppIcon.entries.forEach { appIcon ->
+            val isSelected = appIcon == currentIcon
+            val iconColor = when (appIcon) {
+                IconHelper.AppIcon.DEFAULT -> androidx.compose.ui.graphics.Color(0xFF5E35B1)
+                IconHelper.AppIcon.PINK -> androidx.compose.ui.graphics.Color(0xFFD81B60)
+                IconHelper.AppIcon.DARK -> androidx.compose.ui.graphics.Color(0xFF121212)
+                IconHelper.AppIcon.BLUE -> androidx.compose.ui.graphics.Color(0xFF276EF1)
+            }
+
+            com.beradeep.aiyo.ui.basics.components.card.Card(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .pointerInput(appIcon) {
+                        detectTapGestures { onIconSelected(appIcon) }
+                    },
+                shape = RoundedCornerShape(12.dp),
+                border = if (isSelected) {
+                    androidx.compose.foundation.BorderStroke(2.dp, AiyoTheme.colors.primary)
+                } else {
+                    androidx.compose.foundation.BorderStroke(1.dp, AiyoTheme.colors.outline.copy(alpha = 0.3f))
+                }
+            ) {
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(16.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    // Visual color preview circle
+                    androidx.compose.foundation.layout.Box(
+                        modifier = Modifier
+                            .size(32.dp)
+                            .background(iconColor, shape = RoundedCornerShape(8.dp))
+                            .then(
+                                if (appIcon == IconHelper.AppIcon.DARK) {
+                                    Modifier.border(1.dp, androidx.compose.ui.graphics.Color.White.copy(alpha = 0.2f), shape = RoundedCornerShape(8.dp))
+                                } else {
+                                    Modifier
+                                }
+                            )
+                    )
+                    Spacer(Modifier.width(16.dp))
+                    Column(modifier = Modifier.weight(1f)) {
+                        Text(
+                            text = appIcon.displayName,
+                            style = LocalTypography.current.body1,
+                            color = if (isSelected) AiyoTheme.colors.primary else AiyoTheme.colors.text
+                        )
+                    }
+                    if (isSelected) {
+                        Icon(
+                            imageVector = Icons.Rounded.Check,
+                            contentDescription = "Selected",
+                            tint = AiyoTheme.colors.primary,
+                            modifier = Modifier.size(24.dp)
+                        )
+                    }
+                }
             }
         }
     }

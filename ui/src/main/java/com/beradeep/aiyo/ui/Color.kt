@@ -87,13 +87,13 @@ data class Colors(
 
 internal val LightColors =
     Colors(
-        primary = Black,
+        primary = Color(0xFF5E35B1),
         onPrimary = White,
         secondary = Gray400,
         onSecondary = Black,
-        tertiary = Blue900,
+        tertiary = Color(0xFFD81B60),
         onTertiary = White,
-        surface = Gray200,
+        surface = Color(0xFFF3EDF7),
         onSurface = Black,
         error = Red600,
         onError = White,
@@ -101,7 +101,7 @@ internal val LightColors =
         onSuccess = White,
         disabled = Gray100,
         onDisabled = Gray500,
-        background = White,
+        background = Color(0xFFF8F9FA),
         onBackground = Black,
         outline = Gray300,
         transparent = Color.Transparent,
@@ -116,13 +116,13 @@ internal val LightColors =
 
 internal val DarkColors =
     Colors(
-        primary = White,
+        primary = Color(0xFFB39DDB),
         onPrimary = Black,
         secondary = Gray400,
         onSecondary = White,
-        tertiary = Blue300,
+        tertiary = Color(0xFFF48FB1),
         onTertiary = Black,
-        surface = Gray900,
+        surface = Color(0xFF121212),
         onSurface = White,
         error = Red400,
         onError = Black,

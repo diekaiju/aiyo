@@ -43,14 +43,31 @@ import com.mikepenz.markdown.compose.elements.highlightedCodeFence
 import com.mikepenz.markdown.model.State
 
 @Composable
-fun MessageBubble(content: String, isUser: Boolean, markdownState: State, fontSize: Int, conversationId: String = "") {
+fun MessageBubble(content: String, isUser: Boolean, markdownState: State, fontSize: Int) {
     val context = androidx.compose.ui.platform.LocalContext.current
     var showPreview by remember { mutableStateOf(false) }
+    var showInstallDialog by remember { mutableStateOf(false) }
     val htmlRegex = Regex("```html\\s*(.*?)\\s*```", RegexOption.DOT_MATCHES_ALL)
     val htmlContent = htmlRegex.find(content)?.groups?.get(1)?.value
 
     if (showPreview && htmlContent != null) {
-        HtmlPreviewDialog(htmlContent = htmlContent, conversationId = conversationId, onDismiss = { showPreview = false })
+        HtmlPreviewDialog(htmlContent = htmlContent, onDismiss = { showPreview = false })
+    }
+
+    if (showInstallDialog && htmlContent != null) {
+        InstallAppDialog(
+            onInstall = { appName, emoji, colorHex ->
+                com.beradeep.aiyo.ui.screens.chat.utils.ShortcutHelper.addWebAppToHomeScreen(
+                    context = context,
+                    htmlContent = htmlContent,
+                    appName = appName,
+                    emoji = emoji,
+                    backgroundColorHex = colorHex
+                )
+                showInstallDialog = false
+            },
+            onDismiss = { showInstallDialog = false }
+        )
     }
 
     Column(
@@ -109,22 +126,13 @@ fun MessageBubble(content: String, isUser: Boolean, markdownState: State, fontSi
 
                 if (htmlContent != null) {
                     Spacer(Modifier.height(12.dp))
-                    Row(
+                    Column(
                         modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = androidx.compose.foundation.layout.Arrangement.spacedBy(8.dp),
-                        verticalAlignment = Alignment.CenterVertically
+                        verticalArrangement = androidx.compose.foundation.layout.Arrangement.spacedBy(8.dp)
                     ) {
                         Button(
-                            onClick = { isCodeExpanded = !isCodeExpanded },
-                            modifier = Modifier.weight(1f),
-                            variant = com.beradeep.aiyo.ui.basics.components.ButtonVariant.PrimaryGhost
-                        ) {
-                            Text(if (isCodeExpanded) "Hide Code" else "Show Code")
-                        }
-
-                        Button(
                             onClick = { showPreview = true },
-                            modifier = Modifier.weight(1f),
+                            modifier = Modifier.fillMaxWidth(),
                             variant = ButtonVariant.PrimaryElevated
                         ) {
                             Row(verticalAlignment = Alignment.CenterVertically) {
@@ -134,17 +142,30 @@ fun MessageBubble(content: String, isUser: Boolean, markdownState: State, fontSi
                             }
                         }
 
-                        com.beradeep.aiyo.ui.basics.components.IconButton(
-                            onClick = {
-                                com.beradeep.aiyo.ui.screens.chat.utils.ShortcutHelper.addWebAppToHomeScreen(
-                                    context = context,
-                                    htmlContent = htmlContent,
-                                    conversationId = conversationId
-                                )
-                            },
-                            variant = com.beradeep.aiyo.ui.basics.components.IconButtonVariant.PrimaryGhost
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = androidx.compose.foundation.layout.Arrangement.spacedBy(8.dp),
+                            verticalAlignment = Alignment.CenterVertically
                         ) {
-                            Icon(Icons.Rounded.AddHome, contentDescription = "Add to Home Screen")
+                            Button(
+                                onClick = { isCodeExpanded = !isCodeExpanded },
+                                modifier = Modifier.weight(1f),
+                                variant = com.beradeep.aiyo.ui.basics.components.ButtonVariant.PrimaryGhost
+                            ) {
+                                Text(if (isCodeExpanded) "Hide Code" else "Show Code")
+                            }
+
+                            Button(
+                                onClick = { showInstallDialog = true },
+                                modifier = Modifier.weight(1f),
+                                variant = ButtonVariant.PrimaryGhost
+                            ) {
+                                Row(verticalAlignment = Alignment.CenterVertically) {
+                                    Icon(Icons.Rounded.AddHome)
+                                    Spacer(Modifier.width(8.dp))
+                                    Text("Install")
+                                }
+                            }
                         }
                     }
                 }
