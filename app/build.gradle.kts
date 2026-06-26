@@ -21,6 +21,10 @@ android {
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
 
+    androidResources {
+        localeFilters += "en"
+    }
+
     signingConfigs {
         create("githubRelease") {
             storeFile = file(System.getenv("SIGNING_KEYSTORE_PATH") ?: "aiyo.jks")
@@ -38,6 +42,12 @@ android {
                 getDefaultProguardFile("proguard-android-optimize.txt"),
                 "proguard-rules.pro"
             )
+        }
+
+        debug {
+            isMinifyEnabled = false
+            isShrinkResources = false
+            isDebuggable = true
         }
 
         create("githubRelease") {
