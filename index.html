@@ -524,6 +524,81 @@ body:has(#view-chat.active) .top-title { max-width:min(55vw,620px);overflow:hidd
   .app.reader-mode .topbar,.app.reader-mode .chat-head,.app.reader-mode .mobile-nav { transition:none!important; }
 }
 
+
+
+/* Compact composer while reading: expands immediately on tap or keyboard focus. */
+.composer-area {
+  transform-origin: bottom center;
+  transition: padding .22s ease, transform .22s ease;
+}
+.composer-area .composer,
+.composer-area .composer textarea,
+.composer-area .composer-bottom,
+.composer-area .composer-hint,
+.composer-area .attachment-strip {
+  transition: padding .22s ease, min-height .22s ease, height .22s ease,
+    border-radius .22s ease, box-shadow .22s ease, opacity .16s ease;
+}
+.composer-area.is-compact { padding-top: 5px; }
+.composer-area.is-compact .attachment-strip,
+.composer-area.is-compact .composer-hint,
+.composer-area.is-compact #providerHint,
+.composer-area.is-compact #promptSettings {
+  display: none !important;
+}
+.composer-area.is-compact .composer {
+  padding: 5px 8px;
+  border-radius: 24px;
+  background: #171e2c;
+  background: color-mix(in srgb, var(--panel) 94%, transparent);
+  box-shadow: 0 7px 22px #03071250;
+  backdrop-filter: blur(16px);
+}
+.composer-area.is-compact .composer textarea {
+  height: 30px !important;
+  min-height: 30px !important;
+  max-height: 30px !important;
+  padding: 5px 8px !important;
+  line-height: 20px;
+  overflow: hidden !important;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+.composer-area.is-compact .composer-bottom {
+  min-height: 32px;
+  padding: 0;
+}
+.composer-area.is-compact .composer-left { gap: 2px; }
+.composer-area.is-compact #attachBtn {
+  width: 31px;
+  height: 31px;
+}
+.composer-area.is-compact .send {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+}
+.composer-area.is-compact .composer:focus-within {
+  box-shadow: 0 0 0 2px #8b5cf51a, 0 7px 22px #03071250;
+}
+@media (max-width: 650px) {
+  .composer-area.is-compact .composer { border-radius: 22px; padding: 4px 7px; }
+  .composer-area.is-compact .composer textarea {
+    height: 29px !important;
+    min-height: 29px !important;
+    max-height: 29px !important;
+  }
+  .composer-area.is-compact .send { width: 31px; height: 31px; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .composer-area,
+  .composer-area .composer,
+  .composer-area .composer textarea,
+  .composer-area .composer-bottom,
+  .composer-area .composer-hint,
+  .composer-area .attachment-strip { transition: none !important; }
+}
+
 </style>
 </head>
 <body>
@@ -577,18 +652,36 @@ body:has(#view-chat.active) .top-title { max-width:min(55vw,620px);overflow:hidd
 <script src="https://cdn.jsdelivr.net/npm/marked@18.1.3/lib/marked.umd.js" crossorigin="anonymous"></script>
 <script src="https://cdn.jsdelivr.net/npm/dompurify@3.4.17/dist/purify.min.js" crossorigin="anonymous"></script>
 <!-- Code syntax highlighting and LaTeX math rendering. -->
-<script src="https://cdn.jsdelivr.net/npm/highlight.js@11.12.0/lib/common.min.js" crossorigin="anonymous"></script>
+<!-- Browser distribution (not the Node/CommonJS lib entry) -->
+<script src="https://cdn.jsdelivr.net/gh/highlightjs/cdn-release@11.12.0/build/highlight.min.js" crossorigin="anonymous"></script>
 <script src="https://cdn.jsdelivr.net/npm/katex@0.19.1/dist/katex.min.js" crossorigin="anonymous"></script>
 <script src="https://cdn.jsdelivr.net/npm/katex@0.19.1/dist/contrib/auto-render.min.js" crossorigin="anonymous"></script>
 <!-- ZIP import/export fallback for browsers without a direct directory picker. -->
 <script src="https://cdn.jsdelivr.net/npm/jszip@3.10.1/dist/jszip.min.js" crossorigin="anonymous"></script>
 
 <script type="module">
-// BYOK single-file prototype. API credentials remain in memory for this page session only.
+// BYOK local-first workspace. Conversations live in browser IndexedDB; notes, credentials and assets live in the selected vault.
 const $ = (s,root=document)=>root.querySelector(s);
 const $$ = (s,root=document)=>Array.from(root.querySelectorAll(s));
 const DB_NAME='byok-local-v1'; let db;
-const state={chats:[],activeId:null,view:'chats',folder:'',provider:'openai',model:'',models:[],credentials:{},configs:{},vault:null,vaultName:'',vaultReady:false,vaultMode:'none',abort:null,pendingFiles:[],folders:['Chats','Notes','Projects'],filter:'',isSending:false,anydocWorker:null,anydocWorkerUrl:null,anydocPending:{}};
+// Persistent app constants and interaction preferences. These were accidentally
+// omitted from the previous build, which caused runtime ReferenceErrors.
+const CREDENTIAL_FILE='credentials.enc';
+const APP_SETTINGS_FILE='app-settings.json';
+const FOLDERS_FILE='folders.json';
+const FEEDBACK_KEY='byok-feedback-v1';
+const feedbackDefaults={sound:true,scroll:false,haptics:true,volume:0.32};
+let feedbackPrefs={...feedbackDefaults};
+try {
+ const savedFeedback=JSON.parse(localStorage.getItem(FEEDBACK_KEY)||'{}');
+ if(savedFeedback && typeof savedFeedback==='object' && !Array.isArray(savedFeedback)) {
+  feedbackPrefs={...feedbackDefaults,...savedFeedback};
+ }
+} catch (error) {
+ console.warn('Could not load interaction preferences; defaults are active.',error);
+}
+let audioContext=null;
+const state={chats:[],activeId:null,view:'chats',folder:'',provider:'openai',model:'',models:[],credentials:{},configs:{},credentialVaultKey:null,credentialsLocked:false,credentialVaultSalt:null,vault:null,vaultName:'',vaultReady:false,vaultMode:'none',browserStoragePersistent:null,abort:null,pendingFiles:[],folders:['Chats','Notes','Projects'],filter:'',isSending:false,anydocWorker:null,anydocWorkerUrl:null,anydocPending:{}};
 
 // Detect capabilities instead of assuming a browser from a user-agent string.
 function detectBrowserEnvironment(){
@@ -607,17 +700,11 @@ function detectBrowserEnvironment(){
 const BROWSER_ENV=detectBrowserEnvironment();
 function browserEnvironmentLabel(){return (BROWSER_ENV.mobile?'Mobile ':'')+BROWSER_ENV.family+' browser';}
 function vaultStorageDescription(){
- if(state.vaultMode==='filesystem'&&state.vaultReady)return 'Direct folder access · '+(state.vaultName||'selected folder');
- if(state.vaultMode==='opfs'&&state.vaultReady)return 'Private browser storage (OPFS) · export ZIP for files outside the browser';
- if(state.vaultMode==='indexeddb')return 'Browser database storage · import/export Markdown or ZIP';
- return 'Not connected · browser database is used as a recovery copy';
+ if(state.vaultMode==='filesystem'&&state.vaultReady)return 'Selected folder: Markdown notes, encrypted provider credentials, settings and attachment assets. Chats are stored only in this browser.';
+ if(state.vaultMode==='opfs'&&state.vaultReady)return 'Private browser vault: notes, encrypted provider credentials, settings and attachment assets. Chats are stored separately in IndexedDB.';
+ if(state.vaultMode==='indexeddb')return 'No external vault connected. Chats still save in browser storage; connect a vault for notes, API keys and attachments.';
+ return 'No vault connected. Chats save in this browser; connect a vault to save notes, encrypted API credentials and attachments.';
 }
-
-const FEEDBACK_KEY='byok-feedback-v1';
-const feedbackDefaults={sound:true,scroll:false,haptics:true,volume:0.32};
-let feedbackPrefs={...feedbackDefaults};
-try{const saved=JSON.parse(localStorage.getItem(FEEDBACK_KEY)||'{}');feedbackPrefs={...feedbackDefaults,...saved};}catch{}
-let audioContext=null;
 function saveFeedbackPrefs(){try{localStorage.setItem(FEEDBACK_KEY,JSON.stringify(feedbackPrefs));}catch{}}
 function vibrateFeedback(kind='tap'){
  if(!feedbackPrefs.haptics||!navigator.vibrate)return;
@@ -675,23 +762,25 @@ async function openDB(){return new Promise(resolve=>{try{const req=indexedDB.ope
 function dbReq(store,mode,fn){if(!db){fallbackLoad(store);const map=fallbackStores[store];const fake={get:k=>({result:map[k]}),put:v=>{const key=v.id||v.key;map[key]=v;fallbackSave(store);return{result:key}},getAll:()=>({result:Object.values(map)}),delete:k=>{delete map[k];fallbackSave(store);return{result:undefined}}};try{return Promise.resolve(fn(fake)?.result)}catch(e){return Promise.reject(e)}}return new Promise((resolve,reject)=>{const tx=db.transaction(store,mode),s=tx.objectStore(store);let req;try{req=fn(s)}catch(e){reject(e);return}tx.oncomplete=()=>resolve(req?.result);tx.onerror=()=>reject(tx.error);tx.onabort=()=>reject(tx.error)})}
 const dbGet=(s,k)=>dbReq(s,'readonly',o=>o.get(k));const dbPut=(s,v)=>dbReq(s,'readwrite',o=>o.put(v));const dbAll=s=>dbReq(s,'readonly',o=>o.getAll());const dbDel=(s,k)=>dbReq(s,'readwrite',o=>o.delete(k));
 async function getVaultHandle(){try{const r=await dbGet('handles','vault');return r?.handle||null}catch{return null}}
-async function askPermission(handle){if(!handle)return false;if(state.vaultMode==='opfs')return true;if(typeof handle.queryPermission!=='function')return true;let p=await handle.queryPermission({mode:'readwrite'});if(p!=='granted'&&typeof handle.requestPermission==='function')p=await handle.requestPermission({mode:'readwrite'});return p==='granted'}
+async function askPermission(handle){if(!handle)return false;if(typeof handle.queryPermission!=='function')return true;let p=await handle.queryPermission({mode:'readwrite'});if(p!=='granted'&&typeof handle.requestPermission==='function')p=await handle.requestPermission({mode:'readwrite'});return p==='granted'}
 async function activateBrowserVault({silent=false}={}){
  if(!navigator.storage||typeof navigator.storage.getDirectory!=='function')throw new Error('This browser does not expose private local file storage. Open BYOK from http://localhost or HTTPS, or use Import/Export Markdown.');
  const root=await navigator.storage.getDirectory();
  const h=await root.getDirectoryHandle('BYOK Vault',{create:true});
+ const switching=state.vaultMode!=='opfs';if(switching){state.credentials={};credentialVaultKey=null;state.credentialVaultSalt=null;state.credentialsLocked=false;state.configs={};state.provider='openai';state.model='';state.models=[];}
  state.vault=h;state.vaultMode='opfs';state.vaultName='BYOK Vault (private browser storage)';state.vaultReady=true;
  await dbPut('meta',{key:'vaultMode',value:'opfs'});
  for(const d of ['Chats','Notes','Projects','Attachments','Attachments/Originals','Attachments/Converted','Attachments/Assets','.trash'])await ensureDir(d);
  try{await navigator.storage.persist?.()}catch{}
- await loadVault();
- const status=$('#vaultStatus');if(status)status.textContent='Vault: private browser storage';
+ await loadVault();await loadVaultSettings();await saveConfig();await saveVaultFolders();
+ const status=$('#vaultStatus');if(status)status.textContent='Chats: browser storage · Vault: private site storage';
  if(!silent)toast('Private browser vault enabled. Markdown files are stored locally in this browser. Export a ZIP to access them outside the browser.','success');
  renderAll();return h;
 }
 async function pickVault(){
+ if(state.vault&&state.vaultMode==='filesystem'&&!state.vaultReady){try{if(await askPermission(state.vault)){state.vaultReady=true;await loadVault();await loadVaultSettings();await saveConfig();await saveVaultFolders();$('#vaultStatus').textContent='Chats: browser storage · Vault: '+state.vaultName;renderAll();toast('Reconnected to '+state.vaultName,'success');return;}}catch(error){console.warn('Could not reconnect saved vault handle:',error)}}
  if(!BROWSER_ENV.directFolderPicker){showVaultStorageOptions();return;}
- try{const h=await window.showDirectoryPicker({id:'byok-vault',mode:'readwrite'});state.vaultMode='filesystem';if(!await askPermission(h)){toast('Folder permission was not granted.','error');return}state.vault=h;state.vaultName=h.name;state.vaultReady=true;await dbPut('handles',{key:'vault',handle:h});await dbPut('meta',{key:'vaultMode',value:'filesystem'});await ensureDir('Chats');await ensureDir('Notes');await ensureDir('Attachments');await ensureDir('.trash');await loadVault();$('#vaultStatus').textContent='Vault: '+h.name;toast('Vault connected: '+h.name,'success');renderAll()}
+ try{const h=await window.showDirectoryPicker({id:'byok-vault',mode:'readwrite'});if(!await askPermission(h)){toast('Folder permission was not granted.','error');return}state.credentials={};credentialVaultKey=null;state.credentialVaultSalt=null;state.credentialsLocked=false;state.configs={};state.provider='openai';state.model='';state.models=[];state.vaultMode='filesystem';state.vault=h;state.vaultName=h.name;state.vaultReady=true;await dbPut('handles',{key:'vault',handle:h});await dbPut('meta',{key:'vaultMode',value:'filesystem'});await ensureDir('Chats');await ensureDir('Notes');await ensureDir('Attachments');await ensureDir('.trash');await loadVault();await loadVaultSettings();await saveConfig();await saveVaultFolders();$('#vaultStatus').textContent='Chats: browser storage · Vault: '+h.name;toast('Vault connected: '+h.name,'success');renderAll()}
  catch(e){if(e.name!=='AbortError')toast('Could not open vault: '+e.message,'error')}
 }
 function openVaultFolderImport(){
@@ -703,30 +792,72 @@ function openVaultFolderImport(){
 function showVaultStorageOptions(){
  const env=browserEnvironmentLabel();
  const folderText=BROWSER_ENV.folderInput?'Import a folder tree of Markdown files.':'Folder selection is not exposed here; use Markdown files or a ZIP archive.';
- openModal(`<div class="modal-head"><div><h2>Vault storage</h2><p class="modal-desc">${esc(env)} · choose the storage method available on this device.</p></div><button class="icon-btn" data-close>×</button></div><div class="model-list" style="display:grid;gap:9px">${BROWSER_ENV.opfs?`<button class="btn primary" id="usePrivateVault">${state.vaultMode==='opfs'&&state.vaultReady?'Continue using private browser vault':'Use private browser vault'}</button>`:`<button class="btn" disabled>Private browser storage unavailable</button>`}<button class="btn" id="importVaultFolderOption">${BROWSER_ENV.folderInput?'Import existing folder':'Choose Markdown files'}</button><button class="btn" id="importVaultZipOption">Import vault ZIP</button><button class="btn" id="exportVaultOption">Export vault ZIP</button></div><p class="modal-desc" style="margin-top:12px">${esc(folderText)} Private browser storage is saved on this browser and is not a normal folder in your file manager. Export a ZIP for a portable copy.</p>`);
+ openModal(`<div class="modal-head"><div><h2>Vault storage</h2><p class="modal-desc">${esc(env)} · choose the storage method available on this device.</p></div><button class="icon-btn" data-close>×</button></div><div class="model-list" style="display:grid;gap:9px">${BROWSER_ENV.opfs?`<button class="btn primary" id="usePrivateVault">${state.vaultMode==='opfs'&&state.vaultReady?'Continue using private browser vault':'Use private browser vault'}</button>`:`<button class="btn" disabled>Private browser storage unavailable</button>`}<button class="btn" id="importVaultFolderOption">${BROWSER_ENV.folderInput?'Import existing folder':'Choose Markdown files'}</button><button class="btn" id="importVaultZipOption">Import vault ZIP</button><button class="btn" id="exportVaultOption">Export workspace ZIP</button></div><p class="modal-desc" style="margin-top:12px">${esc(folderText)} Private browser storage is saved on this browser and is not a normal folder in your file manager. Export a ZIP for a portable copy.</p>`);
  if(BROWSER_ENV.opfs)$('#usePrivateVault').onclick=async()=>{closeModal();try{await activateBrowserVault()}catch(e){state.vaultMode='indexeddb';state.vaultName='Browser storage';state.vaultReady=false;toast('Private storage is unavailable: '+e.message,'error');renderAll()}};
  $('#importVaultFolderOption').onclick=()=>{closeModal();openVaultFolderImport()};
  $('#importVaultZipOption').onclick=()=>{closeModal();$('#vaultZipImportInput').click()};
  $('#exportVaultOption').onclick=()=>{closeModal();exportVaultZip()};
 }
-async function ensureDir(path){if(!state.vault)return null;let h=state.vault;for(const p of path.split('/').filter(Boolean))h=await h.getDirectoryHandle(p,{create:true});return h}
-async function writeVaultFile(folder,name,content){if(!state.vault||!await askPermission(state.vault))throw new Error('Vault folder permission is unavailable');const dir=await ensureDir(folder);const f=await dir.getFileHandle(name,{create:true});const w=await f.createWritable();await w.write(content);await w.close();return f}
-async function readVaultFile(folder,name){const dir=await ensureDir(folder),f=await dir.getFileHandle(name),file=await f.getFile();return await file.text()}
-async function removeVaultFile(folder,name){const dir=await ensureDir(folder);await dir.removeEntry(name)}
-function frontmatter(record){const q=v=>JSON.stringify(v??'');return `---\nbyok_type: ${record.kind}\nschema_version: 1\nid: ${q(record.id)}\ntitle: ${q(record.title)}\nfolder: ${q(record.folder)}\nprovider: ${q(record.provider||'')}\nmodel: ${q(record.model||'')}\ncreated_at: ${q(record.createdAt)}\nupdated_at: ${q(record.updatedAt)}\nfavorite: ${record.favorite?'true':'false'}\ndeleted: ${record.deleted?'true':'false'}\n---\n\n# ${record.title.replace(/\n/g,' ')}\n\n`}
+async function ensureDir(path){
+ if(!state.vault)return null;
+ const raw=String(path||'').replace(/\\/g,'/').split('/').filter(Boolean);
+ if(raw.some(part=>part==='.'||part==='..'||/[\u0000-\u001f:*?\"<>|]/.test(part)))throw new Error('Unsafe vault folder path.');
+ let h=state.vault;for(const part of raw)h=await h.getDirectoryHandle(part,{create:true});return h;
+}
+function assertVaultFileName(name){const n=String(name||'');if(!n||n==='.'||n==='..'||/[\\/\u0000-\u001f:*?\"<>|]/.test(n))throw new Error('Unsafe vault file name.');return n;}
+async function writeVaultFile(folder,name,content){if(!state.vault||!await askPermission(state.vault))throw new Error('Vault folder permission is unavailable');const dir=await ensureDir(folder),f=await dir.getFileHandle(assertVaultFileName(name),{create:true}),w=await f.createWritable();await w.write(content);await w.close();return f}
+async function writeVaultBlob(folder,name,blob){if(!state.vault||!await askPermission(state.vault))throw new Error('Vault folder permission is unavailable');const dir=await ensureDir(folder),f=await dir.getFileHandle(assertVaultFileName(name),{create:true}),w=await f.createWritable();await w.write(blob);await w.close();return f}
+async function readVaultFile(folder,name){const dir=await ensureDir(folder),f=await dir.getFileHandle(assertVaultFileName(name)),file=await f.getFile();return await file.text()}
+async function removeVaultFile(folder,name){const dir=await ensureDir(folder);await dir.removeEntry(assertVaultFileName(name))}
+async function removeVaultDirectory(path){
+ const parts=String(path||'').replace(/\\/g,'/').split('/').filter(Boolean);
+ if(!parts.length||parts.some(part=>part==='.'||part==='..'||/[\u0000-\u001f:*?\"<>|]/.test(part)))throw new Error('Unsafe vault folder path.');
+ let parent=state.vault;for(const part of parts.slice(0,-1))parent=await parent.getDirectoryHandle(part);
+ await parent.removeEntry(parts.at(-1),{recursive:true});
+}
+function frontmatter(record){const q=v=>JSON.stringify(v??'');return `---\nbyok_type: ${record.kind}\nschema_version: 1\nid: ${q(record.id)}\ntitle: ${q(record.title)}\nfolder: ${q(record.folder)}\nprovider: ${q(record.provider||'')}\nmodel: ${q(record.model||'')}\nsystem_prompt: ${q(record.systemPrompt||'')}\ncreated_at: ${q(record.createdAt)}\nupdated_at: ${q(record.updatedAt)}\nfavorite: ${record.favorite?'true':'false'}\ndeleted: ${record.deleted?'true':'false'}\n---\n\n# ${record.title.replace(/\n/g,' ')}\n\n`}
 function serialize(record){let out=frontmatter(record);if(record.kind==='note')return out+(record.noteContent||'')+'\n';for(const m of record.messages||[]){out+=`<!-- BYOK_MESSAGE ${m.role} ${m.createdAt||''} -->\n${m.content||''}\n<!-- /BYOK_MESSAGE -->\n\n`;}if(record.attachments?.length){out+=`<!-- BYOK_ATTACHMENTS ${btoa(unescape(encodeURIComponent(JSON.stringify(record.attachments))))} -->\n`;}return out}
 function parseMarkdown(text,fallbackName='Imported note'){
  const front=text.match(/^---\s*\n([\s\S]*?)\n---\s*\n?/);const meta={};if(front){for(const line of front[1].split('\n')){const m=line.match(/^([\w_]+):\s*(.*)$/);if(m){let v=m[2];try{v=JSON.parse(v)}catch{}meta[m[1]]=v;}}}
- const rec={id:meta.id||uid(),kind:meta.byok_type==='chat'?'chat':'note',title:meta.title||fallbackName.replace(/\.md$/i,''),folder:meta.folder||'Chats',provider:meta.provider||'',model:meta.model||'',createdAt:meta.created_at||new Date().toISOString(),updatedAt:meta.updated_at||new Date().toISOString(),favorite:meta.favorite===true||meta.favorite==='true',deleted:meta.deleted===true||meta.deleted==='true',messages:[],attachments:[]};
+ const rec={id:meta.id||uid(),kind:meta.byok_type==='chat'?'chat':'note',title:meta.title||fallbackName.replace(/\.md$/i,''),folder:meta.folder||'Chats',provider:meta.provider||'',model:meta.model||'',systemPrompt:meta.system_prompt||'',createdAt:meta.created_at||new Date().toISOString(),updatedAt:meta.updated_at||new Date().toISOString(),favorite:meta.favorite===true||meta.favorite==='true',deleted:meta.deleted===true||meta.deleted==='true',messages:[],attachments:[]};
  const body=front?text.slice(front[0].length):text;if(rec.kind==='note'){rec.noteContent=body.replace(/^# .*?(?:\n|$)/,'').trim();return rec;}const re=/<!-- BYOK_MESSAGE (user|assistant|system) ([^>]*) -->\n([\s\S]*?)\n<!-- \/BYOK_MESSAGE -->/g;let m;while((m=re.exec(text)))rec.messages.push({role:m[1],createdAt:m[2]||'',content:m[3]});
  const a=text.match(/<!-- BYOK_ATTACHMENTS ([A-Za-z0-9+/=]+) -->/);if(a){try{rec.attachments=JSON.parse(decodeURIComponent(escape(atob(a[1]))))}catch{}}
  if(!rec.messages.length&&!front){const body=text.replace(/^# .*\n/,'').trim();if(body)rec.messages=[{role:'assistant',createdAt:rec.createdAt,content:body}];rec.kind='note';rec.folder='Notes';}
  return rec;
 }
-async function persist(record){record.updatedAt=new Date().toISOString();await dbPut('chats',record);let vaultSaved=true;if(state.vault&&record.kind!=='attachment'){const folder=record.deleted?'.trash':record.folder||'Chats';const name=slug(record.title)+'--'+record.id.slice(0,7)+'.md';try{await writeVaultFile(folder,name,serialize(record));record._fileName=name;record._fileFolder=folder;state.vaultReady=true;try{await dbPut('chats',record)}catch(e){console.warn('Vault file saved; metadata index will be rebuilt:',e)}}catch(e){vaultSaved=false;state.vaultReady=false;toast('Vault write failed. The browser recovery copy is safe; the existing vault file was kept: '+e.message,'error');}}updateCounts();return vaultSaved}
+async function persist(record){
+ record.updatedAt=new Date().toISOString();
+ if(record.kind==='chat'){
+  // Conversations are stored only in this browser's IndexedDB, never written to the selected vault.
+  // The selected vault remains responsible for notes, settings, credentials and attachment assets.
+  delete record._fileName;delete record._fileFolder;
+  try{
+   await dbPut('chats',record);
+   updateCounts();
+   return true;
+  }catch(error){
+   toast('Browser chat storage failed. Your message was not marked as saved: '+error.message,'error');
+   return false;
+  }
+ }
+ if(!state.vault||!state.vaultReady){toast('Connect a writable vault before saving notes. Conversations can be saved without a vault.','error');return false;}
+ const rawFolder=record.deleted?'.trash':(record.folder||(record.kind==='note'?'Notes':'Chats'));
+ const folderParts=safeVaultSegments(rawFolder);
+ if(!folderParts.length||['Settings','Attachments','Templates'].includes(folderParts[0])||(!record.deleted&&folderParts[0]==='.trash')){toast('Choose a valid document folder inside the vault.','error');return false;}
+ const folder=folderParts.join('/');record.folder=record.deleted?(record.folder||'Notes'):folder;
+ const name=slug(record.title)+'--'+record.id.slice(0,7)+'.md';
+ try{
+  await writeVaultFile(folder,name,serialize(record));
+  record._fileName=name;record._fileFolder=folder;
+  try{await dbPut('chats',record)}catch(e){console.warn('Vault file saved; metadata index will be rebuilt:',e)}
+  state.vaultReady=true;updateCounts();return true;
+ }catch(e){state.vaultReady=false;toast('Vault write failed. The note was not marked as saved: '+e.message,'error');return false;}
+}
 async function loadVault(){
  if(!state.vault)return;
- const found=[];
+ const folderMeta=await dbGet('meta','folders');
+ state.folders=[...new Set(['Chats','Notes','Projects',...(folderMeta?.value||state.folders||[])])];
+ const vaultNotes=[],legacyChats=[];
  async function scan(dir,folder=''){
   for await(const [name,h] of dir.entries()){
    const path=folder?folder+'/'+name:name;
@@ -737,38 +868,159 @@ async function loadVault(){
      if(parent==='.trash'||parent.startsWith('.trash/'))r.deleted=true;
      if(parent&&parent!=='.trash'&&!parent.startsWith('.trash/'))r.folder=parent;
      else if(!parent)r.folder=r.kind==='note'?'Notes':'Chats';
-     r._fileName=name;r._fileFolder=folder;found.push(r);
+     if(r.kind==='chat'){
+      // Legacy chat files are imported once; new chats are never read from or written to vault files.
+      delete r._fileName;delete r._fileFolder;legacyChats.push(r);
+     }else{
+      r._fileName=name;r._fileFolder=folder;vaultNotes.push(r);
+     }
      if(r.folder&&r.folder!=='Chats'&&r.folder!=='Notes'&&!state.folders.includes(r.folder))state.folders.push(r.folder);
     }catch(e){console.warn('Skip vault file',name,e)}
-   }else if(h.kind==='directory'&&!['Attachments','Templates'].includes(name)){
+   }else if(h.kind==='directory'&&!['Attachments','Templates','Settings'].includes(name)){
     if(name!=='.trash'&&!state.folders.includes(path))state.folders.push(path);
     await scan(h,path);
    }
   }
  }
  await scan(state.vault,'');
- await dbPut('meta',{key:'folders',value:state.folders});
  const cached=await dbAll('chats')||[];
- const diskIds=new Set(found.map(r=>r.id));
- state.chats=[...found,...cached.filter(r=>!diskIds.has(r.id))];
- for(const r of found)await dbPut('chats',r);
- // Recover browser-only records into the selected vault so the files become the portable source of truth.
- for(const r of cached.filter(x=>!diskIds.has(x.id)&&!x.deleted))await persist(r);
+ const browserChats=cached.filter(r=>r.kind==='chat');
+ const chatMigration=await dbGet('meta','legacyVaultChatsImportedV1');
+ if(!chatMigration?.value){
+  for(const legacy of legacyChats){
+   const existing=browserChats.find(x=>x.id===legacy.id);
+   if(!existing||new Date(legacy.updatedAt||0)>new Date(existing.updatedAt||0)){
+    try{await dbPut('chats',legacy);const ix=browserChats.findIndex(x=>x.id===legacy.id);if(ix>=0)browserChats[ix]=legacy;else browserChats.push(legacy)}catch(error){console.warn('Could not migrate legacy chat into browser storage:',legacy.title,error)}
+   }
+  }
+  await dbPut('meta',{key:'legacyVaultChatsImportedV1',value:true});
+ }
+ // Preserve the older one-time migration for browser-indexed notes only. Never migrate chats back into the vault.
+ const noteMigration=await dbGet('meta','legacyVaultMigrationComplete');
+ const cachedNotes=cached.filter(r=>r.kind==='note');
+ if(!noteMigration?.value&&!vaultNotes.length&&cachedNotes.length){
+  for(const old of cachedNotes){
+   const r=structuredClone(old);delete r._fileName;delete r._fileFolder;
+   const rawFolder=r.deleted?'.trash':(r.folder||'Notes');
+   const parts=safeVaultSegments(rawFolder);r.folder=parts.join('/')||'Notes';
+   if(await persist(r))vaultNotes.push(r);
+  }
+  await dbPut('meta',{key:'legacyVaultMigrationComplete',value:true});
+ }
+ state.chats=[...browserChats,...vaultNotes.filter(n=>!browserChats.some(c=>c.id===n.id))];
+ for(const note of vaultNotes){try{await dbPut('chats',note)}catch(error){console.warn('Vault note index cache update failed:',error)}}
+ await saveVaultFolders();
 }
 async function init(){try{
- db=await openDB();if(!db)toast('IndexedDB is unavailable; browser storage may be restricted. Use localhost or HTTPS.','error');
- state.chats=await dbAll('chats')||[];
+ db=await openDB();if(!db)toast('IndexedDB is unavailable; browser chat storage may not persist. Open BYOK from localhost or HTTPS.','error');
+ const cachedRecords=await dbAll('chats')||[];
+ state.chats=cachedRecords.filter(r=>r.kind==='chat');
+ const localFolders=await dbGet('meta','folders');if(localFolders?.value)state.folders=[...new Set(['Chats','Notes','Projects',...localFolders.value])];
+ try{state.browserStoragePersistent=typeof navigator.storage?.persist==='function'?await navigator.storage.persist():null;}catch{state.browserStoragePersistent=false;}
  const h=await getVaultHandle();
- if(h){state.vault=h;state.vaultMode='filesystem';if(await askPermission(h)){state.vaultName=h.name;state.vaultReady=true;$('#vaultStatus').textContent='Vault: '+h.name;await loadVault()}else{$('#vaultStatus').textContent='Vault permission needed';}}
- else if(!window.showDirectoryPicker&&navigator.storage&&typeof navigator.storage.getDirectory==='function'){
-  try{await activateBrowserVault({silent:true})}catch(e){state.vaultMode='indexeddb';state.vaultName='Browser storage';console.warn('OPFS unavailable; using IndexedDB and Markdown import/export fallback:',e);toast('Using private browser storage. You can import an existing vault folder and export it as ZIP.','warning')}
+ if(h){state.vault=h;state.vaultMode='filesystem';if(await askPermission(h)){state.vaultName=h.name;state.vaultReady=true;$('#vaultStatus').textContent='Vault: '+h.name+' · notes & credentials';await loadVault();}else{$('#vaultStatus').textContent='Chats saved in browser · vault permission needed';}}
+ else{
+  const savedMode=await dbGet('meta','vaultMode');
+  if((savedMode?.value==='opfs'||!BROWSER_ENV.directFolderPicker)&&navigator.storage&&typeof navigator.storage.getDirectory==='function'){
+   try{await activateBrowserVault({silent:true});}catch(e){state.vaultMode='none';state.vaultName='';state.vaultReady=false;console.warn('Private vault unavailable:',e);}
+  }else{state.vaultReady=false;state.vaultMode='none';state.vaultName='';$('#vaultStatus').textContent='Chats saved in browser storage';}
  }
  const meta=await dbGet('meta','config');if(meta?.value){state.configs=meta.value.configs||{};state.provider=meta.value.provider||'openai';state.model=meta.value.model||'';}
- const folders=await dbGet('meta','folders');if(folders?.value)state.folders=folders.value;
- const cached=await dbGet('meta','models:'+state.provider);if(cached?.value)state.models=cached.value;
+ if(state.vault&&state.vaultReady){await loadVaultSettings();await saveConfig().catch(e=>console.warn('Settings cache remains local:',e));}
+ const folders=await dbGet('meta','folders');if(folders?.value)state.folders=[...new Set([...state.folders,...folders.value])];
+ const cached=await dbGet('meta','models:'+state.provider);if(!state.models.length&&cached?.value)state.models=cached.value;
  renderAll();
- }catch(e){console.error(e);toast('Local database could not initialize: '+e.message,'error');renderAll()}}
-async function saveConfig(){await dbPut('meta',{key:'config',value:{provider:state.provider,model:state.model,configs:state.configs}});}
+ }catch(e){console.error(e);toast('BYOK could not initialize local storage: '+e.message,'error');renderAll();}}
+function safeVaultSegments(path){return String(path||'').replace(/\\/g,'/').split('/').filter(Boolean).map(part=>part.trim()).filter(part=>part&&part!=='.'&&part!=='..'&&!/[\u0000-\u001f]/.test(part)&&!/[\\:*?"<>|]/.test(part));}
+let credentialVaultKey=null; // Derived non-extractable key; memory only.
+const CREDENTIAL_KDF_ITERATIONS=310000;
+const CREDENTIAL_AAD=new TextEncoder().encode('BYOK encrypted provider credentials v1');
+let credentialEnvelopeCache=null;
+function bytesToBase64(bytes){let binary='';for(const b of bytes)binary+=String.fromCharCode(b);return btoa(binary)}
+function base64ToBytes(value){const binary=atob(value);const out=new Uint8Array(binary.length);for(let i=0;i<binary.length;i++)out[i]=binary.charCodeAt(i);return out}
+async function deriveCredentialKey(passphrase,salt){
+ if(!window.crypto?.subtle)throw new Error('Secure credential encryption requires HTTPS or localhost in this browser.');
+ const material=await crypto.subtle.importKey('raw',new TextEncoder().encode(passphrase),'PBKDF2',false,['deriveKey']);
+ return crypto.subtle.deriveKey({name:'PBKDF2',salt,iterations:CREDENTIAL_KDF_ITERATIONS,hash:'SHA-256'},material,{name:'AES-GCM',length:256},false,['encrypt','decrypt']);
+}
+async function readCredentialEnvelope(){
+ if(!state.vault||!state.vaultReady)return null;
+ try{const raw=await readVaultFile('Settings',CREDENTIAL_FILE);const env=JSON.parse(raw);if(env?.format!=='BYOK-CREDENTIALS'||env.version!==1)throw new Error('The credential file has an unsupported format.');credentialEnvelopeCache=env;return env;}
+ catch(error){if(error?.name==='NotFoundError'||/not found|could not find/i.test(error?.message||'')){credentialEnvelopeCache=null;return null;}throw error;}
+}
+function requestVaultPassphrase({create=false}={}){
+ return new Promise(resolve=>{
+  openModal(`<div class="modal-head"><h2>${create?'Protect provider credentials':'Unlock provider credentials'}</h2><button class="icon-btn" id="credentialCancelTop" aria-label="Close">×</button></div><p class="modal-desc">${create?'Create a vault password. BYOK encrypts API keys with AES-GCM and a PBKDF2-derived key before writing them into the selected vault.':'Enter the vault password to decrypt the provider keys stored in this vault.'}</p><div class="form-group"><label class="form-label">${create?'New vault password':'Vault password'}</label><input class="input" id="credentialPass" type="password" autocomplete="new-password" placeholder="At least 10 characters"></div>${create?'<div class="form-group"><label class="form-label">Confirm password</label><input class="input" id="credentialPassConfirm" type="password" autocomplete="new-password" placeholder="Enter it again"></div><div class="notice warning">This password is not saved anywhere. If you lose it, the encrypted API keys cannot be recovered. Keep a secure record of it.</div>':'<div class="notice">Your password is used locally to unlock <b>Settings/credentials.enc</b>. It is never sent to an AI provider or stored in browser storage.</div>'}<div class="hint" id="credentialPassError" role="status"></div><div class="modal-actions"><button class="btn" id="credentialCancel">Cancel</button><button class="btn primary" id="credentialContinue">${create?'Create encrypted vault':'Unlock'}</button></div>`);
+  const finish=value=>{closeModal();resolve(value)};
+  $('#credentialCancel').onclick=()=>finish(null);$('#credentialCancelTop').onclick=()=>finish(null);
+  $('#credentialContinue').onclick=()=>{const pass=$('#credentialPass').value;if(pass.length<10){$('#credentialPassError').textContent='Use at least 10 characters.';return;}if(create&&pass!==$('#credentialPassConfirm').value){$('#credentialPassError').textContent='The passwords do not match.';return;}finish(pass)};
+  $('#credentialPass').addEventListener('keydown',e=>{if(e.key==='Enter')$('#credentialContinue').click()});
+  setTimeout(()=>$('#credentialPass')?.focus(),50);
+ });
+}
+async function unlockCredentialVault({createIfMissing=false}={}){
+ if(!state.vault||!state.vaultReady){toast('Connect a writable vault before saving or unlocking provider credentials.','error');return false;}
+ let envelope;
+ try{envelope=await readCredentialEnvelope()}catch(error){toast('Could not read encrypted credentials: '+error.message,'error');return false;}
+ if(!envelope){
+  if(!createIfMissing)return false;
+  const pass=await requestVaultPassphrase({create:true});if(!pass)return false;
+  const salt=crypto.getRandomValues(new Uint8Array(16));
+  try{credentialVaultKey=await deriveCredentialKey(pass,salt);state.credentialVaultSalt=salt;state.credentialsLocked=false;return true;}
+  catch(error){credentialVaultKey=null;toast('Could not initialize credential encryption: '+error.message,'error');return false;}
+ }
+ if(credentialVaultKey)return true;
+ for(let attempt=0;attempt<3;attempt++){
+  const pass=await requestVaultPassphrase({create:false});if(!pass)return false;
+  try{
+   const salt=base64ToBytes(envelope.kdf.salt),iv=base64ToBytes(envelope.cipher.iv);
+   const key=await deriveCredentialKey(pass,salt);
+   const plain=await crypto.subtle.decrypt({name:'AES-GCM',iv,additionalData:CREDENTIAL_AAD},key,base64ToBytes(envelope.cipher.data));
+   const parsed=JSON.parse(new TextDecoder().decode(plain));
+   if(!parsed||typeof parsed!=='object'||Array.isArray(parsed))throw new Error('Invalid credential payload.');
+   state.credentials=parsed;credentialVaultKey=key;state.credentialVaultSalt=salt;state.credentialsLocked=false;
+   toast('Provider credentials unlocked from your vault.','success');return true;
+  }catch(error){toast(attempt===2?'Could not unlock credentials after three attempts. Check your vault password.':'Incorrect password or damaged credential file. Try again.','error');}
+ }
+ return false;
+}
+async function saveCredentialsToVault(){
+ if(!state.vault||!state.vaultReady||!credentialVaultKey)throw new Error('Unlock the vault credential store before saving API keys.');
+ const salt=state.credentialVaultSalt||crypto.getRandomValues(new Uint8Array(16));
+ const iv=crypto.getRandomValues(new Uint8Array(12));
+ const plain=new TextEncoder().encode(JSON.stringify(state.credentials));
+ const encrypted=await crypto.subtle.encrypt({name:'AES-GCM',iv,additionalData:CREDENTIAL_AAD},credentialVaultKey,plain);
+ const envelope={format:'BYOK-CREDENTIALS',version:1,kdf:{name:'PBKDF2',hash:'SHA-256',iterations:CREDENTIAL_KDF_ITERATIONS,salt:bytesToBase64(salt)},cipher:{name:'AES-GCM',iv:bytesToBase64(iv),data:bytesToBase64(new Uint8Array(encrypted))},updatedAt:new Date().toISOString()};
+ await writeVaultFile('Settings',CREDENTIAL_FILE,JSON.stringify(envelope,null,2));credentialEnvelopeCache=envelope;state.credentialVaultSalt=salt;state.credentialsLocked=false;
+}
+async function vaultHasSavedCredentials(){try{return !!(await readCredentialEnvelope())}catch(error){console.warn('Credential envelope could not be inspected:',error);return true}}
+async function saveVaultFolders(){
+ const folders=[...new Set(state.folders.map(f=>safeVaultSegments(f).join('/')).filter(Boolean))];
+ state.folders=folders;
+ await dbPut('meta',{key:'folders',value:state.folders});
+ if(state.vault&&state.vaultReady){
+  for(const folder of folders)if(!['Chats','Notes'].includes(folder))await ensureDir(folder);
+  await writeVaultFile('Settings',FOLDERS_FILE,JSON.stringify({version:1,folders,updatedAt:new Date().toISOString()},null,2));
+ }
+}
+async function loadVaultSettings(){
+ const localFolderMeta=await dbGet('meta','folders');if(localFolderMeta?.value)state.folders=[...new Set([...state.folders,...localFolderMeta.value])];
+ if(!state.vault||!state.vaultReady)return;
+ try{
+  const raw=await readVaultFile('Settings',APP_SETTINGS_FILE),v=JSON.parse(raw);
+  if(v&&v.version===1){state.configs=v.configs||{};state.provider=v.provider||state.provider||'openai';state.model=v.model||'';}
+ }catch(error){if(error?.name!=='NotFoundError'&&!/not found|could not find/i.test(error?.message||''))console.warn('Could not load vault settings:',error);}
+ try{const raw=await readVaultFile('Settings',FOLDERS_FILE),v=JSON.parse(raw);if(Array.isArray(v?.folders))state.folders=[...new Set([...state.folders,...v.folders])];}catch(error){if(error?.name!=='NotFoundError'&&!/not found|could not find/i.test(error?.message||''))console.warn('Could not load vault folders:',error);}
+ try{credentialEnvelopeCache=await readCredentialEnvelope();state.credentialsLocked=!!credentialEnvelopeCache;}catch(error){console.warn('Could not inspect saved credentials:',error);state.credentialsLocked=true;}
+ try{const raw=await readVaultFile('Settings','models-'+state.provider+'.json'),v=JSON.parse(raw);if(v.provider===state.provider&&Array.isArray(v.models))state.models=v.models;}catch(error){if(error?.name!=='NotFoundError'&&!/not found|could not find/i.test(error?.message||''))console.warn('Could not load saved model catalogue:',error);}
+}
+async function lockCredentials(){state.abort?.abort();state.credentials={};credentialVaultKey=null;state.credentialVaultSalt=null;state.credentialsLocked=await vaultHasSavedCredentials();toast(state.credentialsLocked?'Provider keys locked. They remain encrypted in your vault.':'In-memory provider keys cleared.','success');if(state.view==='settings')renderView();}
+async function saveConfig(){
+ if(!state.vault||!state.vaultReady)throw new Error('Connect a writable vault before saving provider or model settings.');
+ const payload={version:1,provider:state.provider,model:state.model,configs:state.configs,updatedAt:new Date().toISOString()};
+ await writeVaultFile('Settings',APP_SETTINGS_FILE,JSON.stringify(payload,null,2));
+ try{await dbPut('meta',{key:'config',value:payload})}catch(error){console.warn('Settings cache update failed:',error)}
+}
 function active(){return state.chats.find(c=>c.id===state.activeId)}
 function syncNavigation(view=state.view){const target=view==='chat'?'chats':view;$$('.nav-btn').forEach(b=>b.classList.toggle('active',b.dataset.view===target));$$('#mobileNav button').forEach(b=>b.classList.toggle('active',b.dataset.view===target));}
 function closeSidebar(){ $('#sidebar').classList.remove('open'); $('#scrim').classList.remove('show'); $('#menuBtn').setAttribute('aria-expanded','false'); }
@@ -788,13 +1040,29 @@ function setView(view,{push=true}={}){
  if(push)pushScreenState({view,activeId:state.activeId,folder:nextFolder,filter:state.filter});
  state.view=view;state.folder=nextFolder;
  $$('.view').forEach(v=>v.classList.remove('active'));$('#view-'+view)?.classList.add('active');syncNavigation(view);
- $('#topTitle').textContent=({chats:'All chats',notes:'Notes',favorites:'Favorites',vault:'Vault files',trash:'Trash',models:'Models & providers',settings:'Settings'})[view]||'BYOK';
+ $('#topTitle').textContent=({chats:'All chats',notes:'Notes',favorites:'Favorites',vault:'Workspace files',trash:'Trash',models:'Models & providers',settings:'Settings'})[view]||'BYOK';
  closeSidebar();$('#mainScroll').scrollTop=0;renderView();playFeedback('tab');
 }
-function openChat(id,{push=true}={}){const record=state.chats.find(x=>x.id===id);if(!record||record.deleted)return;resetReaderChrome();if(push)pushScreenState({view:'chat',activeId:id,folder:state.folder,filter:state.filter});state.activeId=id;if(record?.provider){state.provider=record.provider;state.model=record.model||'';state.models=[];}state.view='chat';$('#topTitle').textContent=record?.kind==='note'?'Notes':'Chats';syncNavigation(record?.kind==='note'?'notes':'chat');closeSidebar();$('#mainScroll').scrollTop=0;$$('.view').forEach(v=>v.classList.remove('active'));const host=$('#view-chat');host.classList.add('active');const c=active();playFeedback('tab');if(c?.kind==='note'){host.innerHTML=`<div class="chat-wrap"><div class="chat-head"><div class="chat-name" id="chatTitle">${esc(c.title)}</div><div class="chat-meta"><span class="statusline" id="saveStatus">Saved</span><span class="pill">▤ Markdown note</span><button class="icon-btn" id="chatMore">⋯</button></div></div><div style="display:flex;gap:8px;align-items:center;margin-bottom:10px"><span class="statusline">Markdown source</span><span style="margin-left:auto"></span><button class="btn" id="notePreviewToggle">Preview</button><button class="btn primary" id="saveNote">Save</button></div><textarea id="noteEditor" class="textarea" spellcheck="true" style="flex:1;min-height:180px;resize:none;font-size:16px;line-height:1.75;padding:17px;background:#111a2d" placeholder="Start writing in Markdown…">${esc(c.noteContent||'')}</textarea><div id="notePreview" class="card md hidden" style="flex:1;overflow:auto;margin-top:8px"></div><div class="composer-hint">Saved as a Markdown document in ${esc(c.folder||'Notes')}</div></div>`;const editor=$('#noteEditor');let timer;editor.oninput=()=>{c.noteContent=editor.value;$('#saveStatus').textContent='Unsaved';clearTimeout(timer);timer=setTimeout(async()=>{await persist(c);$('#saveStatus').textContent='Saved'},550)};$('#saveNote').onclick=async()=>{c.noteContent=editor.value;await persist(c);$('#saveStatus').textContent='Saved';toast('Note saved','success')};$('#notePreviewToggle').onclick=()=>{const pre=$('#notePreview'),editing=!pre.classList.contains('hidden');if(editing){pre.classList.add('hidden');editor.classList.remove('hidden');$('#notePreviewToggle').textContent='Preview'}else{pre.innerHTML=renderMarkdown(editor.value);enhanceMarkdown(pre);pre.classList.remove('hidden');editor.classList.add('hidden');$('#notePreviewToggle').textContent='Edit'}};$('#chatMore').onclick=()=>recordMenu(c);return;}
+function openChat(id,{push=true}={}){const record=state.chats.find(x=>x.id===id);if(!record||record.deleted)return;resetReaderChrome();if(push)pushScreenState({view:'chat',activeId:id,folder:state.folder,filter:state.filter});state.activeId=id;if(record?.provider){state.provider=record.provider;state.model=record.model||'';state.models=[];}state.view='chat';$('#topTitle').textContent=record?.kind==='note'?'Notes':'Chats';syncNavigation(record?.kind==='note'?'notes':'chat');closeSidebar();$('#mainScroll').scrollTop=0;$$('.view').forEach(v=>v.classList.remove('active'));const host=$('#view-chat');host.classList.add('active');const c=active();playFeedback('tab');if(c?.kind==='note'){host.innerHTML=`<div class="chat-wrap"><div class="chat-head"><div class="chat-name" id="chatTitle">${esc(c.title)}</div><div class="chat-meta"><span class="statusline" id="saveStatus">Saved</span><span class="pill">▤ Markdown note</span><button class="icon-btn" id="chatMore">⋯</button></div></div><div style="display:flex;gap:8px;align-items:center;margin-bottom:10px"><span class="statusline">Markdown source</span><span style="margin-left:auto"></span><button class="btn" id="notePreviewToggle">Preview</button><button class="btn primary" id="saveNote">Save</button></div><textarea id="noteEditor" class="textarea" spellcheck="true" style="flex:1;min-height:180px;resize:none;font-size:16px;line-height:1.75;padding:17px;background:#111a2d" placeholder="Start writing in Markdown…">${esc(c.noteContent||'')}</textarea><div id="notePreview" class="card md hidden" style="flex:1;overflow:auto;margin-top:8px"></div><div class="composer-hint">Saved as a Markdown document in ${esc(c.folder||'Notes')}</div></div>`;const editor=$('#noteEditor');let timer;editor.oninput=()=>{c.noteContent=editor.value;$('#saveStatus').textContent='Unsaved';clearTimeout(timer);timer=setTimeout(async()=>{$('#saveStatus').textContent=await persist(c)?'Saved':'Save failed'},550)};$('#saveNote').onclick=async()=>{c.noteContent=editor.value;const ok=await persist(c);$('#saveStatus').textContent=ok?'Saved':'Save failed';if(ok)toast('Note saved','success')};$('#notePreviewToggle').onclick=()=>{const pre=$('#notePreview'),editing=!pre.classList.contains('hidden');if(editing){pre.classList.add('hidden');editor.classList.remove('hidden');$('#notePreviewToggle').textContent='Preview'}else{pre.innerHTML=renderMarkdown(editor.value);enhanceMarkdown(pre);pre.classList.remove('hidden');editor.classList.add('hidden');$('#notePreviewToggle').textContent='Edit'}};$('#chatMore').onclick=()=>recordMenu(c);return;}
  host.innerHTML=`<div class="chat-wrap" id="chatView"><button class="reader-restore" id="readerRestore" type="button" aria-label="Show hidden navigation and controls">↑ Show controls</button><div class="chat-head chat-conversation"><div class="chat-name" id="chatTitle">Conversation</div><div class="chat-meta"><span class="statusline" id="saveStatus">Saved</span><button class="btn" id="activeModelBtn">✧ <span id="activeModelLabel">Choose model</span></button><button class="icon-btn" id="chatMore">⋯</button></div></div><div class="messages" id="messages"></div><div class="composer-area"><div class="attachment-strip" id="attachmentStrip"></div><div class="composer"><textarea id="composerInput" rows="1" placeholder="Message BYOK…"></textarea><div class="composer-bottom"><div class="composer-left"><button class="icon-btn" id="attachBtn" title="Attach files">＋</button><span class="statusline" id="providerHint">Connect an AI provider to start</span></div><div class="composer-right"><button class="icon-btn" id="promptSettings" title="Generation settings">☷</button><button class="send" id="sendBtn" title="Send">➤</button></div></div></div><div class="composer-hint">Enter to send · Shift+Enter for a new line · Requests go directly to your selected provider</div></div></div>`;bindChat();renderChat();}
-function resetReaderChrome(){const app=$('.app');if(app)app.classList.remove('reader-mode','reader-chrome-hidden');}
-function setReaderChromeHidden(hidden){const app=$('.app');if(!app)return;app.classList.add('reader-mode');app.classList.toggle('reader-chrome-hidden',!!hidden);const restore=$('#readerRestore');if(restore)restore.setAttribute('aria-hidden',hidden?'false':'true');}
+function resetReaderChrome(){const app=$('.app');if(app)app.classList.remove('reader-mode','reader-chrome-hidden');const area=$('.composer-area');if(area){area.classList.remove('is-compact');area.setAttribute('aria-expanded','true');}}
+function setComposerCompact(compact){
+ const area=$('.composer-area');if(!area)return;
+ const input=$('#composerInput');
+ // Keep the full composer while the user is actively typing.
+ if(compact&&input&&document.activeElement===input)return;
+ area.classList.toggle('is-compact',!!compact);
+ area.setAttribute('aria-expanded',compact?'false':'true');
+ if(!compact)resizeComposer();
+}
+function setReaderChromeHidden(hidden){
+ const app=$('.app');if(!app)return;
+ app.classList.add('reader-mode');
+ app.classList.toggle('reader-chrome-hidden',!!hidden);
+ setComposerCompact(!!hidden);
+ const restore=$('#readerRestore');
+ if(restore)restore.setAttribute('aria-hidden',hidden?'false':'true');
+}
 function initChatReaderChrome(box){
  if(!box)return;
  if(box.dataset.readerScrollBound==='1')return;
@@ -822,7 +1090,7 @@ function initChatReaderChrome(box){
  box.addEventListener('scroll',onScroll,{passive:true});
  const restore=$('#readerRestore');if(restore)restore.onclick=()=>{setReaderChromeHidden(false);playFeedback('tab');};
 }
-function renderChat({forceBottom=false}={}){const c=active();if(!c)return;$('#chatTitle').textContent=c.title;$('#topTitle').textContent=c.kind==='note'?'Notes':(c.title||'New chat');$('#activeModelLabel').textContent=c.model||state.model||'Choose model';$('#providerHint').textContent=c.provider?(PROVIDERS[c.provider]?.name||'Custom')+' · direct connection':'Connect an AI provider to start';const box=$('#messages');if(!box)return;const previousTop=box.scrollTop;const wasNearBottom=(box.scrollHeight-box.clientHeight-previousTop)<150;initChatReaderChrome(box);if(!c.messages.length){box.innerHTML=`<div class="welcome"><div class="welcome-mark" aria-hidden="true">✦</div><h1>What would you like to explore?</h1><p>Ask a question, work through an idea, or add a document. Your conversations stay in your BYOK workspace.</p><div class="suggestions"><button class="suggestion" data-prompt="Explain this topic in simple terms, with an example."><span>✧</span> Explain a topic</button><button class="suggestion" data-prompt="Help me brainstorm practical ideas for a project."><span>◇</span> Brainstorm ideas</button><button class="suggestion" data-prompt="Create a clear, structured study note about "><span>▤</span> Create study notes</button></div></div>`;$$('[data-prompt]',box).forEach(b=>b.onclick=()=>{$('#composerInput').value=b.dataset.prompt;$('#composerInput').focus();resizeComposer()});}else{box.innerHTML=c.messages.map((m,i)=>messageHTML(m,i)).join('');enhanceMarkdown(box,{deferHeavy:state.isSending});$$('[data-copy]',box).forEach(b=>b.onclick=()=>copyText(c.messages[+b.dataset.copy].content));$$('[data-edit]',box).forEach(b=>b.onclick=()=>editMessage(+b.dataset.edit));$$('[data-regenerate]',box).forEach(b=>b.onclick=()=>regenerate());}const strip=$('#attachmentStrip');if(strip)strip.innerHTML=(state.pendingFiles||[]).map((f,i)=>`<div class="attach-chip"><span>▤</span><div style="min-width:0"><b style="display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:155px">${esc(f.name)}</b><small>${sizeFmt(f.size)} · ${f.status==='ready'?'Markdown ready':f.status||'Attached'}</small></div><button class="remove" data-remove-file="${i}">×</button></div>`).join('');$$('[data-remove-file]',strip||document).forEach(b=>b.onclick=()=>{state.pendingFiles.splice(+b.dataset.removeFile,1);renderChat()});requestAnimationFrame(()=>{if(!box.isConnected)return;if(forceBottom||wasNearBottom)box.scrollTop=box.scrollHeight;else box.scrollTop=previousTop;});}
+function renderChat({forceBottom=false}={}){const c=active();if(!c)return;$('#chatTitle').textContent=c.title;$('#topTitle').textContent=c.kind==='note'?'Notes':(c.title||'New chat');$('#activeModelLabel').textContent=c.model||state.model||'Choose model';$('#providerHint').textContent=c.provider?(PROVIDERS[c.provider]?.name||'Custom')+' · direct connection':'Connect an AI provider to start';const box=$('#messages');if(!box)return;const previousTop=box.scrollTop;const wasNearBottom=(box.scrollHeight-box.clientHeight-previousTop)<150;initChatReaderChrome(box);if(!c.messages.length){box.innerHTML=`<div class="welcome"><div class="welcome-mark" aria-hidden="true">✦</div><h1>What would you like to explore?</h1><p>Ask a question, work through an idea, or add a document. Conversations are saved in this browser; notes and provider credentials stay in your selected vault.</p><div class="suggestions"><button class="suggestion" data-prompt="Explain this topic in simple terms, with an example."><span>✧</span> Explain a topic</button><button class="suggestion" data-prompt="Help me brainstorm practical ideas for a project."><span>◇</span> Brainstorm ideas</button><button class="suggestion" data-prompt="Create a clear, structured study note about "><span>▤</span> Create study notes</button></div></div>`;$$('[data-prompt]',box).forEach(b=>b.onclick=()=>{$('#composerInput').value=b.dataset.prompt;$('#composerInput').focus();resizeComposer()});}else{box.innerHTML=c.messages.map((m,i)=>messageHTML(m,i)).join('');enhanceMarkdown(box,{deferHeavy:state.isSending});$$('[data-copy]',box).forEach(b=>b.onclick=()=>copyText(c.messages[+b.dataset.copy].content));$$('[data-edit]',box).forEach(b=>b.onclick=()=>editMessage(+b.dataset.edit));$$('[data-regenerate]',box).forEach(b=>b.onclick=()=>regenerate());}const strip=$('#attachmentStrip');if(strip)strip.innerHTML=(state.pendingFiles||[]).map((f,i)=>`<div class="attach-chip"><span>▤</span><div style="min-width:0"><b style="display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:155px">${esc(f.name)}</b><small>${sizeFmt(f.size)} · ${f.status==='ready'?'Markdown ready':f.status||'Attached'}</small></div><button class="remove" data-remove-file="${i}">×</button></div>`).join('');$$('[data-remove-file]',strip||document).forEach(b=>b.onclick=async()=>{const i=+b.dataset.removeFile,item=state.pendingFiles[i];if(!item)return;for(const path of [item.markdownPath,item.originalPath])if(path){const parts=path.split('/'),name=parts.pop();try{await removeVaultFile(parts.join('/'),name)}catch(error){if(error?.name!=='NotFoundError')console.warn('Could not remove attachment file:',error)}}state.pendingFiles.splice(i,1);renderChat()});requestAnimationFrame(()=>{if(!box.isConnected)return;if(forceBottom||wasNearBottom)box.scrollTop=box.scrollHeight;else box.scrollTop=previousTop;});}
 function messageHTML(m,i){const assistant=m.role==='assistant';return `<article class="message ${assistant?'assistant':'user'}"><div class="msg-avatar">${assistant?'✦':'You'}</div><div class="msg-content">${assistant?'<div class="msg-role">BYOK assistant</div>':'<div class="msg-role">You</div>'}<div class="md">${renderMarkdown(m.content||'')}</div>${assistant?`<div class="msg-actions"><button data-copy="${i}">▢ Copy</button><button data-regenerate="1">↻ Regenerate</button></div>`:`<div class="msg-actions"><button data-copy="${i}">▢ Copy</button><button data-edit="${i}">✎ Edit</button></div>`}</div></article>`}
 function renderMarkdown(src=''){
  const markdown=String(src??'').replace(/\r\n?/g,'\n').replace(/^[\u200B\u200C\u200D\u200E\u200F\uFEFF]/,'');
@@ -887,40 +1155,67 @@ function enhanceMarkdown(root,{deferHeavy=false}={}){
   }
  }
 }
-function bindChat(){const input=$('#composerInput');input.addEventListener('input',resizeComposer);input.addEventListener('keydown',e=>{if(e.key==='Enter'&&!e.shiftKey){e.preventDefault();sendMessage()}});$('#sendBtn').onclick=()=>state.isSending?stopGeneration():sendMessage();$('#attachBtn').onclick=()=>$('#filePicker').click();$('#filePicker').onchange=async e=>{await handleFiles([...e.target.files]);e.target.value=''};$('#activeModelBtn').onclick=()=>currentCredential()?openModelPicker():openProviderModal();$('#chatMore').onclick=()=>chatMenu();$('#promptSettings').onclick=()=>generationSettings();}
+function bindChat(){
+ const input=$('#composerInput'),area=$('.composer-area');
+ input.addEventListener('input',resizeComposer);
+ // Tapping any part of the compact composer expands it; focusing the text box does too.
+ area?.addEventListener('pointerdown',()=>{
+  if(area.classList.contains('is-compact'))setComposerCompact(false);
+ },{passive:true});
+ area?.addEventListener('focusin',()=>setComposerCompact(false));
+ input.addEventListener('keydown',e=>{if(e.key==='Enter'&&!e.shiftKey){e.preventDefault();sendMessage()}});
+ $('#sendBtn').onclick=()=>state.isSending?stopGeneration():sendMessage();
+ $('#attachBtn').onclick=()=>$('#filePicker').click();
+ $('#filePicker').onchange=async e=>{await handleFiles([...e.target.files]);e.target.value=''};
+ $('#activeModelBtn').onclick=()=>currentCredential()?openModelPicker():openProviderModal();
+ $('#chatMore').onclick=()=>chatMenu();$('#promptSettings').onclick=()=>generationSettings();
+}
 function resizeComposer(){const e=$('#composerInput');if(e){e.style.height='auto';e.style.height=Math.min(e.scrollHeight,170)+'px'}}
-async function createChat(){const preferred=state.folder||'Chats';const c=newRecord('chat',preferred);state.chats.unshift(c);state.activeId=c.id;await persist(c);openChat(c.id)}
-async function createNote(){const preferred=state.folder||'Notes';const c=newRecord('note',preferred);c.title='Untitled note';c.noteContent='';state.chats.unshift(c);state.activeId=c.id;await persist(c);openChat(c.id)}
+async function createChat(){const preferred=state.folder||'Chats';const c=newRecord('chat',preferred);if(!await persist(c))return;state.chats.unshift(c);state.activeId=c.id;openChat(c.id)}
+async function createNote(){if(!state.vault||!state.vaultReady){toast('Choose a writable vault before creating notes.','warning');pickVault();return;}const preferred=state.folder||'Notes';const c=newRecord('note',preferred);c.title='Untitled note';c.noteContent='';if(!await persist(c))return;state.chats.unshift(c);state.activeId=c.id;openChat(c.id)}
 async function renameRecord(c){const v=prompt('New name',c.title);if(!v?.trim())return;const old=c._fileName,oldFolder=c._fileFolder??(c.deleted?'.trash':c.folder);const previousTitle=c.title;c.title=v.trim();if(!await persist(c)){c.title=previousTitle;await dbPut('chats',c);return}if(state.vault&&old&&old!==c._fileName){try{await removeVaultFile(oldFolder,old)}catch{}}toast('Renamed');renderAll();if(state.activeId===c.id)renderChat()}
 async function moveRecord(c){const choices=state.folders.filter(x=>x!=='.trash');const v=prompt('Move to folder:\n'+choices.join(', '),c.folder||'Chats');if(!v)return;if(!choices.includes(v.trim())){toast('That folder is not in the current folder list. Create it first.','error');return}const old=c._fileName,oldFolder=c._fileFolder??c.folder,previousFolder=c.folder;c.folder=v.trim();if(!await persist(c)){c.folder=previousFolder;await dbPut('chats',c);return}if(state.vault&&old&&(old!==c._fileName||oldFolder!==c._fileFolder)){try{await removeVaultFile(oldFolder,old)}catch{}}renderAll();toast('Moved to '+c.folder,'success')}
 async function deleteRecord(c){if(!confirm(`Move “${c.title}” to Trash?`))return;const old=c._fileName,oldFolder=c._fileFolder??c.folder;c.deleted=true;if(!await persist(c)){c.deleted=false;await dbPut('chats',c);return}if(state.vault&&old&&(old!==c._fileName||oldFolder!==c._fileFolder)){try{await removeVaultFile(oldFolder,old)}catch{}}if(state.activeId===c.id){state.activeId=null;setView('chats')}renderAll();toast('Moved to Trash')}
 async function restoreRecord(c){const old=c._fileName,oldFileFolder=c._fileFolder??'.trash',previousFolder=c.folder,previousDeleted=c.deleted;c.deleted=false;c.folder=c.kind==='note'?'Notes':'Chats';if(!await persist(c)){c.deleted=previousDeleted;c.folder=previousFolder;await dbPut('chats',c);return}if(state.vault&&old&&(old!==c._fileName||oldFileFolder!==c._fileFolder)){try{await removeVaultFile(oldFileFolder,old)}catch{}}renderAll();toast('Restored','success')}
-async function duplicateRecord(c){const d=structuredClone(c);d.id=uid();d.title=c.title+' (copy)';d.createdAt=new Date().toISOString();d.updatedAt=d.createdAt;d.deleted=false;state.chats.unshift(d);await persist(d);renderAll();toast('Duplicated','success')}
-function recordMenu(c){openModal(`<div class="modal-head"><h2>${esc(c.title)}</h2><button class="icon-btn" data-close>×</button></div><p class="modal-desc">Document actions</p><div class="model-list"><button class="btn" data-act="rename">✎ Rename</button><button class="btn" data-act="move">↗ Move to folder</button><button class="btn" data-act="duplicate">▢ Duplicate</button><button class="btn" data-act="favorite">${c.favorite?'★ Remove favorite':'☆ Add to favorites'}</button><button class="btn" data-act="export">↓ Export Markdown</button><button class="btn danger" data-act="delete">⌫ Move to Trash</button></div>`);$$('[data-act]').forEach(b=>b.onclick=async()=>{closeModal();({rename:()=>renameRecord(c),move:()=>moveRecord(c),duplicate:()=>duplicateRecord(c),favorite:async()=>{c.favorite=!c.favorite;await persist(c);renderAll()},export:()=>downloadMarkdown(c),delete:()=>deleteRecord(c)})[b.dataset.act]?.()})}
+async function duplicateRecord(c){const d=structuredClone(c);d.id=uid();d.title=c.title+' (copy)';d.createdAt=new Date().toISOString();d.updatedAt=d.createdAt;d.deleted=false;if(!await persist(d))return;state.chats.unshift(d);renderAll();toast('Duplicated','success')}
+function recordMenu(c){openModal(`<div class="modal-head"><h2>${esc(c.title)}</h2><button class="icon-btn" data-close>×</button></div><p class="modal-desc">Document actions</p><div class="model-list"><button class="btn" data-act="rename">✎ Rename</button><button class="btn" data-act="move">↗ Move to folder</button><button class="btn" data-act="duplicate">▢ Duplicate</button><button class="btn" data-act="favorite">${c.favorite?'★ Remove favorite':'☆ Add to favorites'}</button><button class="btn" data-act="export">↓ Export Markdown</button><button class="btn danger" data-act="delete">⌫ Move to Trash</button></div>`);$$('[data-act]').forEach(b=>b.onclick=async()=>{closeModal();({rename:()=>renameRecord(c),move:()=>moveRecord(c),duplicate:()=>duplicateRecord(c),favorite:async()=>{const previous=c.favorite;c.favorite=!c.favorite;if(!await persist(c)){c.favorite=previous;return;}renderAll()},export:()=>downloadMarkdown(c),delete:()=>deleteRecord(c)})[b.dataset.act]?.()})}
 function chatMenu(){const c=active();if(c)recordMenu(c)}
 function openModal(html){$('#modal').innerHTML=html;$('#modalBackdrop').classList.add('open');playFeedback('modal');$$('[data-close]').forEach(b=>b.onclick=closeModal);$('#modalBackdrop').onclick=e=>{if(e.target===$('#modalBackdrop'))closeModal()}}
 function closeModal(){$('#modalBackdrop').classList.remove('open')}
 function download(name,content,type='text/markdown'){const blob=new Blob([content],{type});const url=URL.createObjectURL(blob);const a=document.createElement('a');a.href=url;a.download=name;a.click();setTimeout(()=>URL.revokeObjectURL(url),1500)}
 function downloadMarkdown(c){download(slug(c.title)+'.md',serialize(c));toast('Markdown exported','success')}
 function vaultPathForRecord(c){const folder=c.deleted?'.trash':(c.folder|| (c.kind==='note'?'Notes':'Chats'));return folder+'/'+slug(c.title)+'--'+c.id.slice(0,7)+'.md'}
+async function exportChatsZip(){
+ if(typeof JSZip==='undefined'){toast('ZIP support could not load. Check your connection and try again.','error');return;}
+ const chats=state.chats.filter(c=>c.kind==='chat');if(!chats.length){toast('There are no chats to export yet.','warning');return;}
+ try{const zip=new JSZip();for(const c of chats)zip.file(vaultPathForRecord(c),serialize(c));const blob=await zip.generateAsync({type:'blob',compression:'DEFLATE',compressionOptions:{level:6}});download('BYOK-Chats-'+new Date().toISOString().slice(0,10)+'.zip',blob,'application/zip');toast(`Exported ${chats.length} browser-stored chat(s).`,'success');}
+ catch(error){toast('Could not export chats: '+error.message,'error');}
+}
 async function exportVaultZip(){
- const records=state.chats.filter(c=>!c.deleted);
- if(!records.length){toast('There are no documents to export');return}
- if(typeof JSZip==='undefined'){
-  records.forEach(downloadMarkdown);
-  toast('ZIP library did not load. Downloaded Markdown files individually instead.','error');
-  return;
- }
+ if(typeof JSZip==='undefined'){toast('ZIP support could not load. Check your connection and try again.','error');return;}
  try{
-  const zip=new JSZip();
-  for(const c of records)zip.file(vaultPathForRecord(c),serialize(c));
+  const zip=new JSZip();let count=0;
+  if(state.vault&&state.vaultReady){
+   async function addDirectory(dir,prefix=''){
+    for await(const [name,handle] of dir.entries()){
+     const path=prefix?prefix+'/'+name:name;
+     if(handle.kind==='directory'){zip.folder(path);await addDirectory(handle,path);}
+     else{const file=await handle.getFile();zip.file(path,file);count++;}
+    }
+   }
+   await addDirectory(state.vault);
+  }
+  // Browser-stored chats are included only in the user-requested backup archive.
+  for(const chat of state.chats.filter(x=>x.kind==='chat')){zip.file(vaultPathForRecord(chat),serialize(chat));count++;}
+  if(!count){toast('There is no local data to export yet.','warning');return;}
   const blob=await zip.generateAsync({type:'blob',compression:'DEFLATE',compressionOptions:{level:6}});
-  download('BYOK-Vault-'+new Date().toISOString().slice(0,10)+'.zip',blob,'application/zip');
-  toast('Vault exported as a ZIP archive','success');
- }catch(e){toast('Could not export vault: '+e.message,'error')}
+  download('BYOK-Backup-'+new Date().toISOString().slice(0,10)+'.zip',blob,'application/zip');
+  toast(`Backup exported (${count} files). Chats were read from browser storage; vault files were included only if a vault is connected.`,'success');
+ }catch(e){toast('Could not export backup: '+e.message,'error');}
 }
 async function importVaultFolderFiles(fileList){
  const files=Array.from(fileList||[]).filter(f=>f.name.toLowerCase().endsWith('.md'));
+ if(!state.vault||!state.vaultReady){let imported=0,skipped=0;for(const file of files){try{const rel=(file.webkitRelativePath||file.name).split('/');const parent=safeVaultSegments(rel.slice(1,-1).join('/')).join('/');const r=parseMarkdown(await file.text(),file.name);if(r.kind!=='chat'){skipped++;continue;}r.id=r.id||uid();if(parent)r.folder=parent;if(!state.folders.includes(r.folder))state.folders.push(r.folder);const existing=state.chats.findIndex(x=>x.id===r.id);if(existing>=0&&new Date(r.updatedAt||0)<new Date(state.chats[existing].updatedAt||0)){skipped++;continue;}if(await persist(r)){if(existing>=0)state.chats[existing]=r;else state.chats.unshift(r);imported++;}else skipped++;}catch(error){console.warn('Could not import browser chat:',file.name,error);skipped++;}}await saveVaultFolders();renderAll();toast(`Imported ${imported} chat(s) into browser storage${skipped?' · '+skipped+' note/invalid file(s) skipped because no vault is connected':''}`,'success');return;}
  if(!files.length){toast('No Markdown files were found in that folder','error');return}
  let imported=0,skipped=0;
  for(const file of files){
@@ -928,7 +1223,7 @@ async function importVaultFolderFiles(fileList){
    const rel=(file.webkitRelativePath||file.name).split('/');
    const parts=rel.length>1?rel.slice(1):rel;
    if(parts.some(p=>p==='Attachments'||p==='Templates')){skipped++;continue}
-   const dirParts=parts.slice(0,-1);
+   const dirParts=safeVaultSegments(parts.slice(0,-1).join('/'));
    const r=parseMarkdown(await file.text(),file.name);
    const folderPath=dirParts.join('/');
    if(folderPath==='.trash'||folderPath.startsWith('.trash/'))r.deleted=true;
@@ -936,52 +1231,112 @@ async function importVaultFolderFiles(fileList){
    else if(!r.folder)r.folder=r.kind==='note'?'Notes':'Chats';
    if(r.folder&&r.folder!=='Chats'&&r.folder!=='Notes'&&!state.folders.includes(r.folder))state.folders.push(r.folder);
    const existing=state.chats.findIndex(x=>x.id===r.id);
-   if(existing>=0){
-    const current=state.chats[existing];
-    if(new Date(r.updatedAt)<new Date(current.updatedAt)){skipped++;continue;}
-    state.chats[existing]=r;
-   }else state.chats.unshift(r);
-   await persist(r);imported++;
+   if(existing>=0&&new Date(r.updatedAt)<new Date(state.chats[existing].updatedAt)){skipped++;continue;}
+   if(!await persist(r)){skipped++;continue;}
+   if(existing>=0)state.chats[existing]=r;else state.chats.unshift(r);
+   imported++;
   }catch(e){console.warn('Could not import Markdown file',file.name,e);skipped++}
  }
- await dbPut('meta',{key:'folders',value:state.folders});
+ await saveVaultFolders();
  renderAll();
  toast(`Imported ${imported} Markdown file${imported===1?'':'s'}${skipped?` · skipped ${skipped}`:''}`,'success');
 }
 async function importVaultZip(file){
  if(!file)return;
  if(typeof JSZip==='undefined'){toast('ZIP support could not load. Import Markdown files instead.','error');return;}
- let imported=0,skipped=0;
+ if(!state.vault||!state.vaultReady){
+  let importedChats=0,skippedChats=0;
+  try{
+   const zip=await JSZip.loadAsync(file);
+   for(const entry of Object.values(zip.files).filter(x=>!x.dir&&x.name.toLowerCase().endsWith('.md')&&!x.name.startsWith('Settings/')&&!x.name.startsWith('Attachments/'))){
+    try{
+     const parts=entry.name.replace(/\\/g,'/').split('/').filter(Boolean);if(parts.some(x=>x==='.'||x==='..')){skippedChats++;continue;}
+     const fileName=parts.pop()||'Imported.md',folder=safeVaultSegments(parts.join('/')).join('/');
+     const r=parseMarkdown(await entry.async('string'),fileName);if(r.kind!=='chat'){skippedChats++;continue;}
+     if(folder)r.folder=folder;delete r._fileName;delete r._fileFolder;
+     const existing=state.chats.findIndex(x=>x.id===r.id);
+     if(existing>=0&&new Date(r.updatedAt||0)<new Date(state.chats[existing].updatedAt||0)){skippedChats++;continue;}
+     if(await persist(r)){if(existing>=0)state.chats[existing]=r;else state.chats.unshift(r);if(r.folder&&!state.folders.includes(r.folder))state.folders.push(r.folder);importedChats++;}else skippedChats++;
+    }catch(error){console.warn('Could not import chat archive entry:',entry.name,error);skippedChats++;}
+   }
+   await saveVaultFolders();renderAll();toast(`Imported ${importedChats} chat(s) into browser storage${skippedChats?' · '+skippedChats+' other/older file(s) skipped':''}`,'success');
+  }catch(error){toast('Could not read chat backup: '+error.message,'error');}
+  return;
+ }
+ let imported=0,skipped=0,otherFiles=0;
  try{
   const zip=await JSZip.loadAsync(file);
-  const entries=Object.values(zip.files).filter(x=>!x.dir&&x.name.toLowerCase().endsWith('.md')&&!x.name.split('/').some(p=>['Attachments','Templates'].includes(p)));
+  const entries=Object.values(zip.files).filter(x=>!x.dir);
+  // Restore non-Markdown vault data first: settings, encrypted credentials and attachment assets.
   for(const entry of entries){
+   const path=entry.name.replace(/\\/g,'/').replace(/^\/+/, '');
+   if(path.split('/').some(part=>!part||part==='.'||part==='..')){skipped++;continue;}
+   if(path.startsWith('Settings/')){
+    const content=await entry.async('string');const relative=path.slice('Settings/'.length);
+    await writeVaultFile('Settings',relative,content);otherFiles++;
+    if(relative===APP_SETTINGS_FILE){try{const v=JSON.parse(content);if(v.version===1){state.configs=v.configs||state.configs;state.provider=v.provider||state.provider;state.model=v.model||state.model;}}catch{}}
+    if(relative===FOLDERS_FILE){try{const v=JSON.parse(content);if(Array.isArray(v.folders))state.folders=[...new Set([...state.folders,...v.folders])];}catch{}}
+   }else if(path.startsWith('Attachments/')){
+    const parts=path.split('/');const name=parts.pop();const folder=parts.join('/');
+    if(path.toLowerCase().endsWith('.md'))await writeVaultFile(folder,name,await entry.async('string'));
+    else await writeVaultBlob(folder,name,await entry.async('blob'));
+    otherFiles++;
+   }
+  }
+  for(const entry of entries.filter(x=>x.name.toLowerCase().endsWith('.md')&&!x.name.startsWith('Attachments/')&&!x.name.startsWith('Settings/'))){
    try{
-    const parts=entry.name.split('/').filter(Boolean);const fileName=parts.pop()||'Imported.md';
-    const folderPath=parts.join('/');const r=parseMarkdown(await entry.async('string'),fileName);
-    if(folderPath==='.trash'||folderPath.startsWith('.trash/'))r.deleted=true;
-    else if(folderPath)r.folder=folderPath;
+    const rawParts=entry.name.replace(/\\/g,'/').split('/').filter(Boolean);if(rawParts.some(part=>part==='.'||part==='..')){skipped++;continue;}const fileName=rawParts.pop()||'Imported.md';const folderPath=safeVaultSegments(rawParts.join('/')).join('/');
+    const r=parseMarkdown(await entry.async('string'),fileName);
+    if(folderPath==='.trash'||folderPath.startsWith('.trash/'))r.deleted=true;else if(folderPath)r.folder=folderPath;
     if(!r.folder)r.folder=r.kind==='note'?'Notes':'Chats';
     if(r.folder&&r.folder!=='.trash'&&!state.folders.includes(r.folder))state.folders.push(r.folder);
     const index=state.chats.findIndex(x=>x.id===r.id);
-    if(index>=0){const current=state.chats[index];if(new Date(r.updatedAt)<new Date(current.updatedAt)){skipped++;continue;}state.chats[index]=r;}
-    else state.chats.unshift(r);
-    await persist(r);imported++;
+    if(index>=0){const current=state.chats[index];if(new Date(r.updatedAt)<new Date(current.updatedAt)){skipped++;continue;}state.chats[index]=r;}else state.chats.unshift(r);
+    if(await persist(r))imported++;else skipped++;
    }catch(error){console.warn('Could not import ZIP entry:',entry.name,error);skipped++;}
   }
-  await dbPut('meta',{key:'folders',value:state.folders});renderAll();
-  toast(`Imported ${imported} Markdown file${imported===1?'':'s'} from ZIP${skipped?' · skipped '+skipped:''}`,'success');
+  state.models=[];await loadVaultSettings();await saveVaultFolders();await saveConfig();
+  credentialVaultKey=null;state.credentials={};state.credentialVaultSalt=null;
+  renderAll();toast(`Vault imported: ${imported} documents, ${otherFiles} settings/assets${skipped?' · '+skipped+' skipped':''}. Encrypted credentials require your vault password.`,'success');
  }catch(error){toast('Could not read this ZIP archive: '+error.message,'error');}
 }
 async function copyText(t){try{await navigator.clipboard.writeText(t);toast('Copied','success')}catch{toast('Clipboard permission was blocked.','error')}}
-function editMessage(i){const c=active(),m=c?.messages[i];if(!m)return;const value=prompt('Edit your message',m.content);if(value===null)return;m.content=value;c.messages=c.messages.slice(0,i+1);persist(c);renderChat()}
+async function editMessage(i){const c=active(),m=c?.messages[i];if(!m)return;const value=prompt('Edit your message',m.content);if(value===null)return;const previous=structuredClone(c.messages);m.content=value;c.messages=c.messages.slice(0,i+1);if(!await persist(c)){c.messages=previous;return;}renderChat()}
 async function regenerate(){const c=active();if(!c)return;const last=c.messages[c.messages.length-1];if(last?.role==='assistant')c.messages.pop();const u=[...c.messages].reverse().find(m=>m.role==='user');if(!u)return;await sendToAI(c)}
-async function sendMessage(){const c=active(),input=$('#composerInput');if(!c||state.isSending)return;const text=input.value.trim();if(!text&&!state.pendingFiles.length)return;if(!currentCredential()){openProviderModal();toast('Connect a provider and add your API key first.');return}if(!state.model){openModelPicker();toast('Choose a model before sending your message.');return}const attachments=state.pendingFiles.map(f=>({name:f.name,size:f.size,mime:f.type,markdown:f.markdown||'',converted:!!f.markdown}));let body=text;if(attachments.length){body+=(body?'\n\n':'')+attachments.map(a=>`**Attached document: ${a.name}**\n${a.markdown? a.markdown.slice(0,45000):'[This file could not be converted, so its contents were NOT sent to the AI.]'}`).join('\n\n---\n\n')}
- c.messages.push({role:'user',content:body,createdAt:new Date().toISOString()});c.attachments=[...(c.attachments||[]),...attachments.map(({name,size,mime,converted})=>({name,size,mime,converted}))];c.provider=state.provider;c.model=state.model;c.title=c.messages.length===1?(text.slice(0,48)||attachments[0]?.name||'New conversation'):c.title;if(c.title==='New conversation')c.title=text.slice(0,48)||c.title;input.value='';resizeComposer();state.pendingFiles=[];await persist(c);renderChat();await sendToAI(c)}
+async function sendMessage(){
+ const c=active(),input=$('#composerInput');if(!c||state.isSending)return;
+ const text=input.value.trim();if(!text&&!state.pendingFiles.length)return;
+ if(!currentCredential()){
+  const hasSaved=await vaultHasSavedCredentials();
+  if(hasSaved){const unlocked=await unlockCredentialVault();if(!unlocked)return;}
+  if(!currentCredential()){await openProviderModal();if(!currentCredential())return;}
+ }
+ if(!state.model){openModelPicker();toast('Choose a model before sending your message.');return;}
+ const attachments=state.pendingFiles.map(f=>({name:f.name,size:f.size,mime:f.type,markdown:f.markdown||'',converted:!!f.markdown,originalPath:f.originalPath||'',markdownPath:f.markdownPath||''}));
+ let body=text;
+ if(attachments.length){body+=(body?'\n\n':'')+attachments.map(a=>`**Attached document: ${a.name}**\n${a.markdown?a.markdown.slice(0,45000):'[This file could not be converted, so its contents were NOT sent to the AI.]'}`).join('\n\n---\n\n');}
+ const userMessage={role:'user',content:body,createdAt:new Date().toISOString()};const previousAttachments=c.attachments||[];const previousTitle=c.title;
+ c.messages.push(userMessage);c.attachments=[...(c.attachments||[]),...attachments.map(({name,size,mime,converted,originalPath,markdownPath})=>({name,size,mime,converted,originalPath,markdownPath}))];
+ c.provider=state.provider;c.model=state.model;c.title=c.messages.length===1?(text.slice(0,48)||attachments[0]?.name||'New conversation'):c.title;
+ input.value='';resizeComposer();state.pendingFiles=[];
+ if(!await persist(c)){c.messages.pop();c.attachments=previousAttachments;c.title=previousTitle;toast('Message was not sent because browser chat storage could not save it.','error');renderChat();return;}
+ renderChat();await sendToAI(c);
+}
 function currentCredential(){return state.credentials[state.provider]?.key||''}
 function providerConfig(id=state.provider){const def=PROVIDERS[id];return{...def,...(state.configs[id]||{})}}
 function systemText(c){return c.systemPrompt||''}
-async function sendToAI(c){if(state.isSending)return;const provider=c.provider||state.provider;const cred=state.credentials[provider]?.key||'';if(!cred){state.provider=provider;openProviderModal();toast('Add the API key for '+(PROVIDERS[provider]?.name||provider)+' to continue.','error');return}const model=c.model||(provider===state.provider?state.model:'');if(!model){state.provider=provider;openModelPicker();toast('Choose a model for this conversation first.');return}state.isSending=true;state.abort=new AbortController();const assistant={role:'assistant',content:'',createdAt:new Date().toISOString()};c.messages.push(assistant);renderChat();const btn=$('#sendBtn');btn.textContent='■';btn.classList.add('stop');const status=$('#saveStatus');if(status)status.textContent='Generating…';try{const messages=c.messages.filter(m=>m.role==='user'||m.role==='assistant').slice(0,-1);let system=systemText(c);const result=await providerStream({provider,model,credential:cred,messages,system,signal:state.abort.signal,onDelta:delta=>{assistant.content+=delta;queueRenderChat(c.id)}});if(!assistant.content&&result)assistant.content=result; if(!assistant.content)assistant.content='(The provider returned an empty response.)';}catch(e){if(e.name==='AbortError'){if(!assistant.content)assistant.content='*Generation stopped.*'}else{assistant.content=assistant.content?assistant.content+`\n\n> **Request error:** ${e.message}`:`**Request error:** ${e.message}`;toast(e.message,'error')}}finally{state.isSending=false;state.abort=null;const current=state.chats.find(x=>x.id===c.id);if(current){await persist(current);if(state.activeId===c.id)renderChat()}const sb=$('#saveStatus');if(sb)sb.textContent='Saved';const b=$('#sendBtn');if(b){b.textContent='➤';b.classList.remove('stop')}}}
+async function sendToAI(c){if(state.isSending)return;const provider=c.provider||state.provider;let cred=state.credentials[provider]?.key||'';if(!cred&&await vaultHasSavedCredentials()){const unlocked=await unlockCredentialVault();if(!unlocked)return;cred=state.credentials[provider]?.key||'';}if(!cred){state.provider=provider;await openProviderModal();cred=state.credentials[provider]?.key||'';if(!cred)return;}const model=c.model||(provider===state.provider?state.model:'');if(!model){state.provider=provider;openModelPicker();toast('Choose a model for this conversation first.');return}state.isSending=true;state.abort=new AbortController();const assistant={role:'assistant',content:'',createdAt:new Date().toISOString()};c.messages.push(assistant);renderChat();const btn=$('#sendBtn');btn.textContent='■';btn.classList.add('stop');const status=$('#saveStatus');if(status)status.textContent='Generating…';try{const messages=c.messages.filter(m=>m.role==='user'||m.role==='assistant').slice(0,-1);let system=systemText(c);const result=await providerStream({provider,model,credential:cred,messages,system,signal:state.abort.signal,onDelta:delta=>{assistant.content+=delta;scheduleStreamingChatSave(c);queueRenderChat(c.id)}});if(!assistant.content&&result)assistant.content=result; if(!assistant.content)assistant.content='(The provider returned an empty response.)';}catch(e){if(e.name==='AbortError'){if(!assistant.content)assistant.content='*Generation stopped.*'}else{assistant.content=assistant.content?assistant.content+`\n\n> **Request error:** ${e.message}`:`**Request error:** ${e.message}`;toast(e.message,'error')}}finally{state.isSending=false;state.abort=null;const current=state.chats.find(x=>x.id===c.id);if(current){await persist(current);if(state.activeId===c.id)renderChat()}const sb=$('#saveStatus');if(sb)sb.textContent='Saved';const b=$('#sendBtn');if(b){b.textContent='➤';b.classList.remove('stop')}}}
+let streamSaveTimer=null,streamSaveRecord=null,streamSaveBusy=false;
+function scheduleStreamingChatSave(record){
+ if(record?.kind!=='chat')return;
+ streamSaveRecord=record;
+ if(streamSaveTimer||streamSaveBusy)return;
+ streamSaveTimer=setTimeout(async()=>{
+  streamSaveTimer=null;const target=streamSaveRecord;streamSaveRecord=null;streamSaveBusy=true;
+  try{await persist(target)}catch(error){console.warn('Partial chat autosave failed:',error)}
+  streamSaveBusy=false;if(streamSaveRecord)scheduleStreamingChatSave(streamSaveRecord);
+ },650);
+}
 let renderTimer=0;function queueRenderChat(id){if(renderTimer)return;renderTimer=setTimeout(()=>{renderTimer=0;if(state.activeId===id)renderChat()},75)}
 function stopGeneration(){state.abort?.abort()}
 async function providerStream({provider,model,credential,messages,system,signal,onDelta}){const cfg=providerConfig(provider),base=(cfg.base||PROVIDERS[provider].base).replace(/\/$/,'');if(provider==='gemini')return geminiStream({base,model,credential,messages,system,signal,onDelta});if(provider==='anthropic')return anthropicStream({base,model,credential,messages,system,signal,onDelta});return openAIStream({base,model,credential,messages,system,signal,onDelta,provider})}
@@ -990,23 +1345,64 @@ async function anthropicStream({base,model,credential,messages,system,signal,onD
 async function geminiStream({base,model,credential,messages,system,signal,onDelta}){const contents=messages.map(m=>({role:m.role==='assistant'?'model':'user',parts:[{text:m.content}]}));const url=base+'/models/'+encodeURIComponent(model.replace(/^models\//,''))+':streamGenerateContent?alt=sse';const body={contents,generationConfig:{maxOutputTokens:2048}};if(system)body.systemInstruction={parts:[{text:system}]};const r=await fetch(url,{method:'POST',headers:{'Content-Type':'application/json','x-goog-api-key':credential},body:JSON.stringify(body),signal});if(!r.ok)throw new Error(await responseError(r));return readSSE(r,raw=>{const j=JSON.parse(raw);for(const p of j.candidates?.[0]?.content?.parts||[])if(p.text)onDelta(p.text)})}
 async function readSSE(response,onData){const reader=response.body.getReader(),decoder=new TextDecoder();let buffer='';while(true){const {value,done}=await reader.read();if(done)break;buffer+=decoder.decode(value,{stream:true});let lines=buffer.split('\n');buffer=lines.pop()||'';for(const line of lines){const s=line.trim();if(s.startsWith('data:')){const data=s.slice(5).trim();if(data){try{onData(data)}catch(e){if(data!=='[DONE]')console.warn('Could not parse stream event',e)}}}}}if(buffer.trim().startsWith('data:')){try{onData(buffer.trim().slice(5).trim())}catch{}}}
 async function responseError(r){let t='';try{const copy=r.clone();try{const j=await copy.json();t=j.error?.message||j.message||JSON.stringify(j).slice(0,500)}catch{t=(await r.text()).slice(0,500)}}catch{}return `Provider error (${r.status}): ${t||r.statusText}`}
-function openProviderModal(){const p=state.provider,cfg=providerConfig(p);openModal(`<div class="modal-head"><h2>Connect an AI provider</h2><button class="icon-btn" data-close>×</button></div><p class="modal-desc">Add your own API key. BYOK sends requests directly to the provider. Your key stays in this page's memory and is cleared when you reload or close it.</p><div class="form-group"><label class="form-label">Provider</label><select class="select" id="providerSelect">${Object.entries(PROVIDERS).map(([id,x])=>`<option value="${id}" ${id===p?'selected':''}>${x.icon} ${x.name}</option>`).join('')}</select></div><div class="form-group" id="baseGroup"><label class="form-label">API base URL</label><input class="input" id="providerBase" value="${esc(cfg.base||'')}" placeholder="https://your-provider.example/v1"/><div class="hint">For OpenAI-compatible services. Use HTTPS unless this is a trusted local endpoint.</div></div><div class="form-group"><label class="form-label">API key</label><div style="display:flex;gap:7px"><input class="input" id="providerKey" type="password" autocomplete="off" placeholder="Paste your API key" style="flex:1"/><button class="btn" id="toggleKey">Show</button></div></div><div class="hint" id="providerDocs"></div><div class="notice">Security note: this prototype does not save API keys to IndexedDB, localStorage or Markdown. They remain in JavaScript memory for this tab only. This is safer than persistent browser storage, but a browser app is not a hardened secret vault.</div><div id="providerMsg" class="hint"></div><div class="modal-actions"><button class="btn" data-close>Cancel</button><button class="btn primary" id="saveProvider">Save & fetch models</button></div>`);
- const sel=$('#providerSelect');const update=()=>{const id=sel.value,d=PROVIDERS[id];$('#providerBase').value=state.configs[id]?.base||d.base;$('#baseGroup').classList.toggle('hidden',id!=='custom');$('#providerDocs').innerHTML=d.docs?`API key page: <a href="${d.docs}" target="_blank" rel="noopener" style="color:#a992ff">Open ${d.name} console ↗</a>`:'Enter your custom OpenAI-compatible API base URL.'};sel.onchange=update;update();$('#toggleKey').onclick=()=>{const f=$('#providerKey');f.type=f.type==='password'?'text':'password';$('#toggleKey').textContent=f.type==='password'?'Show':'Hide'};$('#saveProvider').onclick=async()=>{const id=sel.value,key=$('#providerKey').value.trim(),base=$('#providerBase').value.trim();if(!key){toast('Paste an API key first.','error');return}if(id==='custom'&&!/^https:\/\//i.test(base)&&!/^http:\/\/localhost(?::\d+)?/i.test(base)){toast('Enter a valid HTTPS base URL (or localhost).','error');return}if(state.provider!==id){state.model='';state.models=[];}state.provider=id;state.credentials[id]={key};state.configs[id]={base:base||PROVIDERS[id].base};$('#providerMsg').textContent='Connecting and loading models…';await saveConfig();try{await fetchModels(id);$('#providerMsg').textContent=`Connected. ${state.models.length} eligible models found.`;closeModal();if(state.models.length)openModelPicker();renderAll();toast('Provider connected','success')}catch(e){$('#providerMsg').textContent=e.message;toast('Could not fetch models: '+e.message,'error')}};}
+async function openProviderModal(){
+ if(!state.vault||!state.vaultReady){toast('Connect a vault to save provider credentials securely. Your chats already save in this browser.','warning');pickVault();return;}
+ const hasSaved=await vaultHasSavedCredentials();
+ if(!credentialVaultKey){const unlocked=await unlockCredentialVault({createIfMissing:!hasSaved});if(!unlocked)return;}
+ const p=state.provider,cfg=providerConfig(p);
+ openModal(`<div class="modal-head"><h2>Connect an AI provider</h2><button class="icon-btn" data-close>×</button></div><p class="modal-desc">Add your own API key. Requests go directly to the provider. API keys are encrypted with your vault password and saved inside <b>${esc(state.vaultName||'your selected vault')}/Settings/credentials.enc</b>.</p><div class="form-group"><label class="form-label">Provider</label><select class="select" id="providerSelect">${Object.entries(PROVIDERS).map(([id,x])=>`<option value="${id}" ${id===p?'selected':''}>${x.icon} ${x.name}</option>`).join('')}</select></div><div class="form-group" id="baseGroup"><label class="form-label">API base URL</label><input class="input" id="providerBase" value="${esc(cfg.base||'')}" placeholder="https://your-provider.example/v1"/><div class="hint">For OpenAI-compatible services. Use HTTPS unless this is a trusted local endpoint.</div></div><div class="form-group"><label class="form-label">API key</label><div style="display:flex;gap:7px"><input class="input" id="providerKey" type="password" autocomplete="off" placeholder="Paste a key, or leave blank to keep the saved key" style="flex:1"/><button class="btn" id="toggleKey">Show</button></div></div><div class="hint" id="providerDocs"></div><div class="notice">Credentials are encrypted locally using AES-256-GCM. The vault password is never stored. You will need it again when reopening BYOK in a new browser session. Export the vault ZIP to back up the encrypted credential file.</div><div id="providerMsg" class="hint"></div><div class="modal-actions"><button class="btn" data-close>Cancel</button><button class="btn primary" id="saveProvider">Encrypt, save & fetch models</button></div>`);
+ const sel=$('#providerSelect');
+ const update=()=>{const id=sel.value,d=PROVIDERS[id];$('#providerBase').value=state.configs[id]?.base||d.base;$('#baseGroup').classList.toggle('hidden',id!=='custom');$('#providerDocs').innerHTML=d.docs?`API key page: <a href="${d.docs}" target="_blank" rel="noopener" style="color:#a992ff">Open ${d.name} console ↗</a>`:'Enter your custom OpenAI-compatible API base URL.'};
+ sel.onchange=update;update();
+ $('#toggleKey').onclick=()=>{const f=$('#providerKey');f.type=f.type==='password'?'text':'password';$('#toggleKey').textContent=f.type==='password'?'Show':'Hide'};
+ $('#saveProvider').onclick=async()=>{
+  const id=sel.value,typedKey=$('#providerKey').value.trim(),key=typedKey||state.credentials[id]?.key||'',base=$('#providerBase').value.trim();
+  if(!key){toast('Paste an API key first.','error');return;}
+  if(id==='custom'&&!/^https:\/\//i.test(base)&&!/^http:\/\/localhost(?::\d+)?/i.test(base)){toast('Enter a valid HTTPS base URL (or localhost).','error');return;}
+  const button=$('#saveProvider');button.disabled=true;button.textContent='Encrypting…';
+  try{
+   if(!credentialVaultKey)throw new Error('Credential vault is locked. Close this dialog and unlock it again.');
+   if(state.provider!==id){state.model='';state.models=[];}
+   state.provider=id;state.credentials[id]={key};state.configs[id]={base:base||PROVIDERS[id].base};
+   await saveCredentialsToVault();await saveConfig();
+   $('#providerMsg').textContent='Encrypted credentials saved to the selected vault. Fetching models…';
+   try{await fetchModels(id);$('#providerMsg').textContent=`Saved securely. ${state.models.length} eligible models found.`;closeModal();if(state.models.length)openModelPicker();renderAll();toast('Provider connected and credentials saved in your vault.','success');}
+   catch(e){$('#providerMsg').textContent='Credentials were saved, but model discovery failed: '+e.message;toast('Credentials saved. Model discovery failed: '+e.message,'error');button.disabled=false;button.textContent='Retry model discovery';button.onclick=async()=>{try{await fetchModels(id);closeModal();renderAll();toast('Models loaded','success')}catch(err){$('#providerMsg').textContent=err.message}};}
+  }catch(e){toast('Could not save encrypted credentials: '+e.message,'error');button.disabled=false;button.textContent='Retry secure save';}
+ };
+}
 async function fetchModels(provider=state.provider){const key=state.credentials[provider]?.key;if(!key)throw new Error('Add the API key for this provider first.');const cfg=providerConfig(provider),base=(cfg.base||'').replace(/\/$/,'');let models=[];
  if(provider==='gemini'){const r=await fetch(base+'/models?pageSize=1000',{headers:{'x-goog-api-key':key}});if(!r.ok)throw new Error(await responseError(r));const j=await r.json();models=(j.models||[]).filter(m=>(m.supportedGenerationMethods||[]).includes('generateContent')&&!/embedding|aqa|imagen|image|veo|tts|audio/i.test(m.name+' '+m.displayName)).map(m=>({id:m.name.replace(/^models\//,''),name:m.displayName||m.name,detail:'Gemini · generateContent'}));}
  else if(provider==='anthropic'){const r=await fetch(base+'/models?limit=1000',{headers:{'x-api-key':key,'anthropic-version':'2023-06-01','anthropic-dangerous-direct-browser-access':'true'}});if(!r.ok)throw new Error(await responseError(r));const j=await r.json();models=(j.data||[]).map(m=>({id:m.id,name:m.display_name||m.id,detail:'Claude · Messages API'}));}
  else if(provider==='openrouter'){const r=await fetch(base+'/models',{headers:{'Authorization':'Bearer '+key}});if(!r.ok)throw new Error(await responseError(r));const j=await r.json();models=(j.data||[]).filter(m=>{const i=m.architecture?.input_modalities||[],o=m.architecture?.output_modalities||[];return i.includes('text')&&o.includes('text')}).map(m=>({id:m.id,name:m.name||m.id,detail:'Text input + text output'}));}
  else {const r=await fetch(base+'/models',{headers:{'Authorization':'Bearer '+key}});if(!r.ok)throw new Error(await responseError(r));const j=await r.json();const rows=j.data||j.models||[];const block=/embed|moderation|whisper|tts|audio|transcri|dall[-_ ]?e|image|imagen|veo|rerank|realtime|speech|video|search/i;const likely=/^(gpt|o[134](?:-|$)|chatgpt|claude|command-r|mistral|deepseek|qwen|llama|gemma|phi|yi|kimi|internlm)/i;models=rows.map(m=>({id:m.id||m.name,name:m.name||m.id,detail:'Provider model list · capabilities may need verification'})).filter(m=>m.id&&!block.test(m.id)&&likely.test(m.id));}
- models.sort((a,b)=>a.name.localeCompare(b.name));state.models=models;await dbPut('meta',{key:'models:'+provider,value:models});return models;}
-async function openModelPicker(){const cached=await dbGet('meta','models:'+state.provider);if(cached?.value)state.models=cached.value;const saved=state.models;openModal(`<div class="modal-head"><h2>Choose a model</h2><button class="icon-btn" data-close>×</button></div><p class="modal-desc">Choose a text conversation model from ${esc(PROVIDERS[state.provider]?.name||'your provider')}.</p><input class="input" id="modelSearch" placeholder="Search models…"/><div class="model-list" id="modelList">${saved.length?saved.map(m=>modelHTML(m)).join(''):'<div class="empty"><b>No models loaded</b><p>Connect a provider and fetch its model catalogue.</p></div>'}</div><div class="modal-actions"><button class="btn" id="refreshModels">↻ Refresh models</button><button class="btn" id="manualModel">Enter model ID</button></div><div class="notice warning">Capability note: Gemini and OpenRouter expose useful capability metadata. OpenAI-compatible model lists and Anthropic model lists may not fully describe capabilities. Known non-chat IDs are excluded, but verify a model with its provider before use.</div>`);const list=()=>{const q=$('#modelSearch').value.toLowerCase();$('#modelList').innerHTML=state.models.filter(m=>(m.name+' '+m.id).toLowerCase().includes(q)).map(m=>modelHTML(m)).join('')||'<div class="empty"><b>No matching models</b></div>';$$('[data-model]').forEach(b=>b.onclick=()=>selectModel(b.dataset.model))};$('#modelSearch').oninput=list;$$('[data-model]').forEach(b=>b.onclick=()=>selectModel(b.dataset.model));$('#refreshModels').onclick=async()=>{try{await fetchModels();list();toast('Model catalogue refreshed','success')}catch(e){toast(e.message,'error')}};$('#manualModel').onclick=()=>{const v=prompt('Enter the exact model ID from your provider');if(v?.trim())selectModel(v.trim())}}
+ models.sort((a,b)=>a.name.localeCompare(b.name));if(!state.vault||!state.vaultReady)throw new Error('Connect a writable vault before saving model settings.');await writeVaultFile('Settings','models-'+provider+'.json',JSON.stringify({provider,models,updatedAt:new Date().toISOString()},null,2));state.models=models;try{await dbPut('meta',{key:'models:'+provider,value:models})}catch(error){console.warn('Model cache update failed:',error)}return models;}
+async function openModelPicker(){if(!state.credentials[state.provider]?.key&&await vaultHasSavedCredentials()){if(!await unlockCredentialVault())return;}const cached=await dbGet('meta','models:'+state.provider);if(!state.models.length&&cached?.value)state.models=cached.value;const saved=state.models;openModal(`<div class="modal-head"><h2>Choose a model</h2><button class="icon-btn" data-close>×</button></div><p class="modal-desc">Choose a text conversation model from ${esc(PROVIDERS[state.provider]?.name||'your provider')}.</p><input class="input" id="modelSearch" placeholder="Search models…"/><div class="model-list" id="modelList">${saved.length?saved.map(m=>modelHTML(m)).join(''):'<div class="empty"><b>No models loaded</b><p>Connect a provider and fetch its model catalogue.</p></div>'}</div><div class="modal-actions"><button class="btn" id="refreshModels">↻ Refresh models</button><button class="btn" id="manualModel">Enter model ID</button></div><div class="notice warning">Capability note: Gemini and OpenRouter expose useful capability metadata. OpenAI-compatible model lists and Anthropic model lists may not fully describe capabilities. Known non-chat IDs are excluded, but verify a model with its provider before use.</div>`);const list=()=>{const q=$('#modelSearch').value.toLowerCase();$('#modelList').innerHTML=state.models.filter(m=>(m.name+' '+m.id).toLowerCase().includes(q)).map(m=>modelHTML(m)).join('')||'<div class="empty"><b>No matching models</b></div>';$$('[data-model]').forEach(b=>b.onclick=()=>selectModel(b.dataset.model))};$('#modelSearch').oninput=list;$$('[data-model]').forEach(b=>b.onclick=()=>selectModel(b.dataset.model));$('#refreshModels').onclick=async()=>{try{await fetchModels();list();toast('Model catalogue refreshed','success')}catch(e){toast(e.message,'error')}};$('#manualModel').onclick=()=>{const v=prompt('Enter the exact model ID from your provider');if(v?.trim())selectModel(v.trim())}}
 function modelHTML(m){return `<div class="model-item"><div style="min-width:0"><b>${esc(m.name)}</b><small>${esc(m.id)} · ${esc(m.detail||'Text model')}</small></div><button class="btn ${state.model===m.id?'primary':''}" data-model="${esc(m.id)}">${state.model===m.id?'Selected':'Select'}</button></div>`}
-async function selectModel(id){state.model=id;await saveConfig();const c=active();if(c){c.model=id;c.provider=state.provider;await persist(c);renderChat()}closeModal();renderAll();toast('Model selected: '+id,'success')}
-function generationSettings(){const c=active();openModal(`<div class="modal-head"><h2>Conversation instructions</h2><button class="icon-btn" data-close>×</button></div><p class="modal-desc">These settings apply to this conversation.</p><div class="form-group"><label class="form-label">System instruction</label><textarea class="textarea" id="systemPrompt" rows="5" placeholder="You are a helpful assistant…">${esc(c?.systemPrompt||'')}</textarea><div class="hint">Sent as a system instruction where supported. The current provider adapter may map this differently.</div></div><div class="notice">This lightweight prototype does not expose every provider-specific sampling parameter. Unsupported parameters are intentionally not sent.</div><div class="modal-actions"><button class="btn" data-close>Cancel</button><button class="btn primary" id="savePrompt">Save instruction</button></div>`);$('#savePrompt').onclick=async()=>{if(c){c.systemPrompt=$('#systemPrompt').value;await persist(c)}closeModal();toast('Instruction saved','success')}}
-async function handleFiles(files){if(!files.length)return;for(const file of files){const item={name:file.name,size:file.size,type:file.type,status:'Preparing',markdown:'',file};state.pendingFiles.push(item);renderChat();try{if(file.size>35*1024*1024)throw new Error('File is larger than the 35 MB prototype limit.');const ext=file.name.split('.').pop().toLowerCase();if(['txt','md','json','html','htm'].includes(ext)){let text=await file.text();item.markdown=ext==='html'||ext==='htm'?htmlToMarkdown(text):text;item.status='ready';}
- else {item.markdown=await convertWithAnyDoc(file,ext);if(!item.markdown?.trim())throw new Error('The converter returned an empty Markdown document.');item.status='ready';}
- const attachFolder='Attachments/Converted';const name=slug(file.name.replace(/\.[^.]+$/,''))+'.md';if(state.vault){await writeVaultFile(attachFolder,name,`# ${file.name}\n\n${item.markdown}`);}
- item.noteName=name;toast(file.name+' converted locally','success');
- }catch(e){item.status='conversion failed';item.error=e.message;toast(file.name+': '+e.message,'error')}renderChat()} }
+async function selectModel(id){const previous=state.model;state.model=id;try{await saveConfig();const c=active();if(c){c.model=id;c.provider=state.provider;if(!await persist(c))throw new Error('The conversation could not be saved to the vault.');renderChat()}closeModal();renderAll();toast('Model selected: '+id,'success')}catch(error){state.model=previous;toast('Could not save model selection: '+error.message,'error')}}
+function generationSettings(){const c=active();openModal(`<div class="modal-head"><h2>Conversation instructions</h2><button class="icon-btn" data-close>×</button></div><p class="modal-desc">These settings apply to this conversation.</p><div class="form-group"><label class="form-label">System instruction</label><textarea class="textarea" id="systemPrompt" rows="5" placeholder="You are a helpful assistant…">${esc(c?.systemPrompt||'')}</textarea><div class="hint">Sent as a system instruction where supported. The current provider adapter may map this differently.</div></div><div class="notice">BYOK currently exposes the shared generation controls supported by the selected provider. Unsupported parameters are intentionally not sent.</div><div class="modal-actions"><button class="btn" data-close>Cancel</button><button class="btn primary" id="savePrompt">Save instruction</button></div>`);$('#savePrompt').onclick=async()=>{if(c){const previous=c.systemPrompt;c.systemPrompt=$('#systemPrompt').value;if(!await persist(c)){c.systemPrompt=previous;return;}}closeModal();toast('Instruction saved','success')}}
+async function handleFiles(files){
+ if(!files.length)return;
+ if(!state.vault||!state.vaultReady){toast('Connect a vault to keep original and converted attachments. Chat text is saved in browser storage.','error');pickVault();return;}
+ for(const file of files){
+  const ext=file.name.split('.').pop().toLowerCase();
+  const item={name:file.name,size:file.size,type:file.type,status:'Preparing',markdown:'',file,originalPath:'',markdownPath:''};
+  state.pendingFiles.push(item);renderChat();
+  try{
+   if(file.size>35*1024*1024)throw new Error('File is larger than the 35 MB limit.');
+   const id=uid().slice(0,10),originalName=id+'-'+slug(file.name);
+   await writeVaultBlob('Attachments/Originals',originalName,file);
+   item.originalPath='Attachments/Originals/'+originalName;
+   if(['txt','md','json','html','htm'].includes(ext)){const text=await file.text();item.markdown=ext==='html'||ext==='htm'?htmlToMarkdown(text):text;item.status='ready';}
+   else{item.markdown=await convertWithAnyDoc(file,ext);if(!item.markdown?.trim())throw new Error('The converter returned an empty Markdown document.');item.status='ready';}
+   const convertedName=id+'-'+slug(file.name.replace(/\.[^.]+$/,''))+'.md';
+   await writeVaultFile('Attachments/Converted',convertedName,`# ${file.name}\n\n${item.markdown}`);
+   item.markdownPath='Attachments/Converted/'+convertedName;item.noteName=convertedName;
+   toast(file.name+' saved to vault and converted locally','success');
+  }catch(e){item.status='conversion failed';item.error=e.message;toast(file.name+': '+e.message,'error');}
+  renderChat();
+ }
+}
 function getAnyDocWorker(){if(state.anydocWorker)return state.anydocWorker;const source=`let converter;self.onmessage=async({data})=>{try{if(!converter){converter=await import('https://unpkg.com/@firecrawl/anydoc-wasm@0.2.4/anydoc_wasm.js');await converter.default();}const bytes=new Uint8Array(data.buffer);const format=converter.formatFromBytes(bytes)||data.ext;const markdown=converter.toMarkdownBytes(bytes,format);self.postMessage({id:data.id,ok:true,markdown});}catch(error){self.postMessage({id:data.id,ok:false,error:error.message||String(error),code:error.code||''});}};`;const blob=new Blob([source],{type:'text/javascript'});state.anydocWorkerUrl=URL.createObjectURL(blob);const w=new Worker(state.anydocWorkerUrl,{type:'module'});w.onmessage=e=>{const p=state.anydocPending[e.data.id];if(!p)return;delete state.anydocPending[e.data.id];if(e.data.ok)p.resolve(e.data.markdown);else p.reject(new Error((e.data.code?e.data.code+': ':'')+e.data.error))};w.onerror=e=>{for(const p of Object.values(state.anydocPending))p.reject(new Error('AnyDoc worker failed: '+e.message));state.anydocPending={};state.anydocWorker=null};state.anydocWorker=w;return w;}
 async function convertWithAnyDoc(file,ext){toast('Converting '+file.name+' locally…');const buffer=await file.arrayBuffer();return new Promise((resolve,reject)=>{try{const w=getAnyDocWorker(),id=uid();state.anydocPending[id]={resolve,reject};w.postMessage({id,buffer,ext},[buffer])}catch(e){reject(new Error('AnyDoc could not start. Open BYOK from localhost or HTTPS and allow the converter CDN. '+e.message))}})}
 function csvToMarkdown(s){const rows=s.split(/\r?\n/).filter(Boolean).map(r=>r.split(','));if(!rows.length)return s;const escCell=x=>x.trim().replace(/\|/g,'\\|');return '| '+rows[0].map(escCell).join(' | ')+' |\n| '+rows[0].map(()=> '---').join(' | ')+' |\n'+rows.slice(1).map(r=>'| '+r.map(escCell).join(' | ')+' |').join('\n')}
@@ -1020,22 +1416,43 @@ function folderMenu(name){
 }
 async function renameFolder(oldName){
  const raw=prompt('Rename folder',oldName);if(!raw?.trim())return;
- const newName=raw.trim().replace(/[\\/:*?"<>|]/g,'-');if(!newName||newName===oldName)return;
- if(state.folders.includes(newName)){toast('A folder with that name already exists','error');return;}
- if(state.vault)try{await ensureDir(newName)}catch(error){toast('Could not create the renamed folder: '+error.message,'error');return;}
- const records=state.chats.filter(c=>!c.deleted&&c.folder===oldName);
- for(const c of records){const oldFile=c._fileName,oldFolder=c._fileFolder??oldName,previous=c.folder;c.folder=newName;const ok=await persist(c);if(!ok){c.folder=previous;await dbPut('chats',c);toast('Folder rename stopped because a document could not be saved','error');return;}if(state.vault&&oldFile){try{await removeVaultFile(oldFolder,oldFile)}catch(error){console.warn('Old folder file could not be removed after successful move:',error)}}}
- state.folders=state.folders.map(f=>f===oldName?newName:f);await dbPut('meta',{key:'folders',value:state.folders});if(state.folder===oldName)state.folder=newName;renderAll();toast('Folder renamed','success');
+ const parts=safeVaultSegments(raw.trim()),newName=parts.join('/');if(!newName||newName===oldName||newName.startsWith(oldName+'/')||['Settings','Attachments','Templates','.trash'].includes(parts[0])){if(newName.startsWith(oldName+'/'))toast('A folder cannot be moved inside itself.','error');return;}
+ if(state.folders.includes(newName)||state.folders.some(f=>f.startsWith(newName+'/')&&f!==oldName)){toast('A folder with that name already exists','error');return;}
+ const affected=state.chats.filter(c=>!c.deleted&&(c.folder===oldName||c.folder.startsWith(oldName+'/')));
+ try{
+  if(state.vault&&state.vaultReady)await ensureDir(newName);
+  for(const c of affected){
+   const previous=c.folder,oldFile=c._fileName,oldFolder=c._fileFolder??c.folder;
+   c.folder=newName+c.folder.slice(oldName.length);
+   if(!await persist(c)){c.folder=previous;throw new Error('Could not save '+c.title+' in the renamed folder.');}
+   if(c.kind==='note'&&state.vault&&oldFile){try{await removeVaultFile(oldFolder,oldFile)}catch(error){console.warn('Old note cleanup failed after successful rename:',error)}}
+  }
+  state.folders=state.folders.map(f=>f===oldName?newName:f.startsWith(oldName+'/')?newName+f.slice(oldName.length):f);
+  if(state.folder===oldName||state.folder.startsWith(oldName+'/'))state.folder=newName+state.folder.slice(oldName.length);
+  await saveVaultFolders();if(state.vault&&state.vaultReady){try{await removeVaultDirectory(oldName)}catch(error){console.debug('Old folder cleanup skipped:',error)}}
+  renderAll();toast('Folder renamed','success');
+ }catch(error){toast('Folder rename was only partially completed: '+error.message,'error');if(state.vault&&state.vaultReady)await loadVault();await saveVaultFolders().catch(()=>{});renderAll();}
 }
 async function deleteFolder(name){
  if(['Chats','Notes'].includes(name)){toast('Default folders cannot be deleted','warning');return;}
- const records=state.chats.filter(c=>!c.deleted&&c.folder===name);
+ const records=state.chats.filter(c=>!c.deleted&&(c.folder===name||c.folder.startsWith(name+'/')));
  if(!confirm(records.length?`Delete “${name}” and move its ${records.length} document(s) to their default folders?`:`Delete folder “${name}”?`))return;
- for(const c of records){const destination=c.kind==='note'?'Notes':'Chats';const oldFile=c._fileName,oldFolder=c._fileFolder??name,previous=c.folder;c.folder=destination;const ok=await persist(c);if(!ok){c.folder=previous;await dbPut('chats',c);toast('Folder deletion stopped because a document could not be saved','error');return;}if(state.vault&&oldFile){try{await removeVaultFile(oldFolder,oldFile)}catch(error){console.warn('Old folder file could not be removed:',error)}}}
- state.folders=state.folders.filter(f=>f!==name);await dbPut('meta',{key:'folders',value:state.folders});if(state.folder===name)state.folder='';renderAll();toast('Folder deleted','success');
+ try{
+  for(const c of records){const destination=c.kind==='note'?'Notes':'Chats',oldFile=c._fileName,oldFolder=c._fileFolder??c.folder,previous=c.folder;c.folder=destination;if(!await persist(c)){c.folder=previous;throw new Error('Could not move '+c.title+' to '+destination+'.');}if(c.kind==='note'&&oldFile&&state.vault){try{await removeVaultFile(oldFolder,oldFile)}catch(error){console.warn('Old note cleanup failed:',error)}}}
+  state.folders=state.folders.filter(f=>f!==name&&!f.startsWith(name+'/'));
+  await saveVaultFolders();if(state.vault&&state.vaultReady){try{await removeVaultDirectory(name)}catch(error){console.warn('Folder directory cleanup skipped:',error)}}
+  if(state.folder===name||state.folder.startsWith(name+'/'))state.folder='';renderAll();toast('Folder deleted','success');
+ }catch(error){toast('Folder deletion was only partially completed: '+error.message,'error');if(state.vault&&state.vaultReady)await loadVault();await saveVaultFolders().catch(()=>{});renderAll();}
 }
 function renderFolders(){const el=$('#folderList');el.innerHTML=state.folders.map(f=>`<button class="folder-btn ${state.folder===f?'selected':''}" data-folder="${esc(f)}"><span>▱</span>${esc(f)}<span class="count" style="margin-left:auto;color:#73819a;font-size:10px">${state.chats.filter(c=>c.folder===f&&!c.deleted).length}</span></button>`).join('');$$('[data-folder]').forEach(b=>{b.onclick=()=>{state.folder=b.dataset.folder;setView('vault')};attachLongPress(b,()=>folderMenu(b.dataset.folder));});}
-async function addFolder(){const f=prompt('Folder name');if(!f?.trim())return;const name=f.trim().replace(/[\\/:*?"<>|]/g,'-');if(state.folders.includes(name)){toast('Folder already exists');return}state.folders.push(name);await dbPut('meta',{key:'folders',value:state.folders});if(state.vault)await ensureDir(name);renderAll();toast('Folder created','success')}
+async function addFolder(){
+ const f=prompt('Folder name (use / for a nested folder)');if(!f?.trim())return;
+ const parts=safeVaultSegments(f.trim()),name=parts.join('/');
+ if(!name||['Settings','Attachments','Templates','.trash'].includes(parts[0])){toast('Choose a valid folder name.','error');return}
+ if(state.folders.includes(name)){toast('Folder already exists');return}
+ try{if(state.vault&&state.vaultReady)await ensureDir(name);state.folders.push(name);await saveVaultFolders();renderAll();toast('Folder created','success')}
+ catch(error){toast('Could not create folder: '+error.message,'error')}
+}
 function recordItem(c){const i=c.kind==='note'?'▤':'✦';return `<div class="file-item" data-record-id="${esc(c.id)}" role="button" tabindex="0" aria-label="Open ${esc(c.title)}"><div class="file-icon">${i}</div><div class="file-info"><b>${esc(c.title)}</b><small>${esc(c.folder||'Chats')} · ${fmtDate(c.updatedAt)} · ${(c.messages||[]).length} ${(c.messages||[]).length===1?'message':'messages'}</small></div>${c.favorite?'<span class="tag">★ Favorite</span>':''}<div class="file-actions"><button class="icon-btn" title="Open" aria-label="Open" data-open="${esc(c.id)}">↗</button><button class="icon-btn" title="More actions" aria-label="More actions" data-menu="${esc(c.id)}">⋯</button></div></div>`}
 function attachLongPress(element,callback){
  let timer=null,startX=0,startY=0,fired=false,suppressClickUntil=0;
@@ -1064,14 +1481,14 @@ function bindRecords(){
   row.addEventListener('keydown',event=>{if((event.key==='Enter'||event.key===' ')&&!event.target.closest('button')){event.preventDefault();if(state.view!=='trash')openChat(row.dataset.recordId)}});
  });
 }
-function renderView(){if(state.view==='chat')return;const q=state.filter.toLowerCase();const live=state.chats.filter(c=>!c.deleted);const search=c=>(c.title+' '+(c.messages||[]).map(m=>m.content).join(' ')).toLowerCase().includes(q);let title='',sub='',list=[];switch(state.view){case'chats':title='Your conversations';sub='Every chat is a local Markdown document, ready to organize and revisit.';list=live.filter(c=>c.kind==='chat'&&search(c));break;case'notes':title='Your notes';sub='Standalone Markdown notes in your workspace.';list=live.filter(c=>c.kind==='note'&&search(c));break;case'favorites':title='Favorites';sub='Your pinned conversations and notes.';list=live.filter(c=>c.favorite&&search(c));break;case'vault':title='Vault files';sub=state.vaultMode==='opfs'?'Files are saved as Markdown in private browser storage. Import or export a complete vault as a folder/ZIP.':state.vaultReady?'Files in '+state.vaultName+'. Markdown files are written to the selected folder.':'Connect a folder to save actual .md files on your device. Browser storage remains available without a vault.';list=live.filter(c=>search(c)&&(!state.folder||c.folder===state.folder));break;case'trash':title='Trash';sub='Deleted documents stay recoverable until you permanently remove them.';list=state.chats.filter(c=>c.deleted&&search(c));break;case'models':renderModelsView();return;case'settings':renderSettingsView();return;}
- const el=$('#view-'+state.view);el.innerHTML=`<h1 class="section-title">${title}</h1><p class="section-sub">${esc(sub)}</p>${state.view==='notes'?'<div style="margin:-8px 0 16px"><button class="btn primary" id="newNoteFromView">＋ New note</button></div>':''}${state.view==='vault'?`<div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:16px"><button class="btn primary" id="chooseVault">▣ ${state.vaultMode==='opfs'?'Private vault options':state.vaultReady?'Change vault':'Choose vault storage'}</button><button class="btn" id="importMd">↑ Import Markdown</button><button class="btn" id="importVaultFolder">▧ Import vault folder</button><button class="btn" id="importVaultZip">↑ Import ZIP</button><button class="btn" id="exportAll">↓ Export vault ZIP</button><input id="mdImportInput" type="file" accept=".md,text/markdown,text/plain" multiple hidden></div>${state.vaultMode==='opfs'?'<div class="notice" style="margin-bottom:14px">This browser stores the vault in private site storage. It is persistent for this site, but it is not a normal folder visible in your file manager. Use <b>Export vault ZIP</b> for a portable copy, or import an existing Markdown folder.</div>':''}`:''}<div class="file-list" id="recordList">${list.length?list.sort((a,b)=>b.updatedAt.localeCompare(a.updatedAt)).map(recordItem).join(''):`<div class="empty"><div class="empty-icon">${state.view==='trash'?'⌫':'✧'}</div><b>${q?'No matches':'Nothing here yet'}</b><p>${q?'Try a different search term.':state.view==='trash'?'Deleted documents will appear here.':'Create a new document or conversation to get started.'}</p></div>`}</div>${state.view==='trash'&&list.length?'<div style="margin-top:12px"><button class="btn danger" id="emptyTrash">Empty trash permanently</button></div>':''}`;
- bindRecords();if(state.view==='notes'&&$('#newNoteFromView'))$('#newNoteFromView').onclick=createNote;if(state.view==='vault'){$('#chooseVault').onclick=pickVault;$('#importMd').onclick=()=>$('#mdImportInput').click();$('#mdImportInput').onchange=async e=>{for(const f of e.target.files){const r=parseMarkdown(await f.text(),f.name);r.id=uid();state.chats.unshift(r);await persist(r)}renderAll();toast('Markdown imported','success')};$('#importVaultFolder').onclick=openVaultFolderImport;$('#importVaultZip').onclick=()=>$('#vaultZipImportInput').click();$('#exportAll').onclick=exportVaultZip;}
+function renderView(){if(state.view==='chat')return;const q=state.filter.toLowerCase();const live=state.chats.filter(c=>!c.deleted);const search=c=>(c.title+' '+(c.messages||[]).map(m=>m.content).join(' ')).toLowerCase().includes(q);let title='',sub='',list=[];switch(state.view){case'chats':title='Your conversations';sub='Conversations are saved privately in this browser. Export them as Markdown whenever you need a portable copy.';list=live.filter(c=>c.kind==='chat'&&search(c));break;case'notes':title='Your notes';sub='Standalone Markdown notes in your workspace.';list=live.filter(c=>c.kind==='note'&&search(c));break;case'favorites':title='Favorites';sub='Your pinned conversations and notes.';list=live.filter(c=>c.favorite&&search(c));break;case'vault':title='Workspace files';sub='Chats live in browser storage. Notes, provider settings, credentials and attachment files use the selected vault when connected.';list=live.filter(c=>search(c)&&(!state.folder||c.folder===state.folder));break;case'trash':title='Trash';sub='Deleted documents stay recoverable until you permanently remove them.';list=state.chats.filter(c=>c.deleted&&search(c));break;case'models':renderModelsView();return;case'settings':renderSettingsView();return;}
+ const el=$('#view-'+state.view);el.innerHTML=`<h1 class="section-title">${title}</h1><p class="section-sub">${esc(sub)}</p>${state.view==='notes'?'<div style="margin:-8px 0 16px"><button class="btn primary" id="newNoteFromView">＋ New note</button></div>':''}${state.view==='chats'?'<div style="display:flex;justify-content:flex-end;margin:-8px 0 16px"><button class="btn" id="exportChatsOnly">↓ Export chat backup</button></div>':''}${state.view==='vault'?`<div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:16px"><button class="btn primary" id="chooseVault">▣ ${state.vaultMode==='opfs'?'Private vault options':state.vaultReady?'Change vault':'Choose vault storage'}</button><button class="btn" id="importMd">↑ Import Markdown</button><button class="btn" id="importVaultFolder">▧ Import vault folder</button><button class="btn" id="importVaultZip">↑ Import ZIP</button><button class="btn" id="exportAll">↓ Export workspace ZIP</button><input id="mdImportInput" type="file" accept=".md,text/markdown,text/plain" multiple hidden></div>${state.vaultMode==='opfs'?'<div class="notice" style="margin-bottom:14px">This browser stores the vault in private site storage. It is persistent for this site, but it is not a normal folder visible in your file manager. Use <b>Export workspace ZIP</b> for a portable copy, or import an existing Markdown folder.</div>':''}`:''}<div class="file-list" id="recordList">${list.length?list.sort((a,b)=>b.updatedAt.localeCompare(a.updatedAt)).map(recordItem).join(''):`<div class="empty"><div class="empty-icon">${state.view==='trash'?'⌫':'✧'}</div><b>${q?'No matches':'Nothing here yet'}</b><p>${q?'Try a different search term.':state.view==='trash'?'Deleted documents will appear here.':'Create a new document or conversation to get started.'}</p></div>`}</div>${state.view==='trash'&&list.length?'<div style="margin-top:12px"><button class="btn danger" id="emptyTrash">Empty trash permanently</button></div>':''}`;
+ bindRecords();if(state.view==='chats'&&$('#exportChatsOnly'))$('#exportChatsOnly').onclick=exportChatsZip;if(state.view==='notes'&&$('#newNoteFromView'))$('#newNoteFromView').onclick=createNote;if(state.view==='vault'){$('#chooseVault').onclick=pickVault;$('#importMd').onclick=()=>$('#mdImportInput').click();$('#mdImportInput').onchange=async e=>{for(const f of e.target.files){const r=parseMarkdown(await f.text(),f.name);r.id=uid();if(await persist(r))state.chats.unshift(r)}renderAll();toast('Markdown imported','success')};$('#importVaultFolder').onclick=openVaultFolderImport;$('#importVaultZip').onclick=()=>$('#vaultZipImportInput').click();$('#exportAll').onclick=exportVaultZip;}
  if(state.view==='trash'&&$('#emptyTrash'))$('#emptyTrash').onclick=async()=>{if(!confirm('Permanently delete all items in Trash? This cannot be undone.'))return;for(const c of state.chats.filter(x=>x.deleted)){await dbDel('chats',c.id);if(state.vault&&c._fileName){try{await removeVaultFile('.trash',c._fileName)}catch{}}}state.chats=state.chats.filter(x=>!x.deleted);renderAll();toast('Trash emptied')};
  if(state.view==='trash'){$$('#recordList [data-menu]').forEach(b=>b.onclick=()=>{const c=state.chats.find(x=>x.id===b.dataset.menu);openModal(`<div class="modal-head"><h2>${esc(c.title)}</h2><button class="icon-btn" data-close>×</button></div><div class="model-list"><button class="btn" id="restoreItem">↶ Restore</button><button class="btn danger" id="deleteForever">Permanently delete</button></div>`);$('#restoreItem').onclick=()=>{closeModal();restoreRecord(c)};$('#deleteForever').onclick=async()=>{closeModal();if(confirm('Delete permanently?')){if(state.vault&&c._fileName){try{await removeVaultFile('.trash',c._fileName)}catch(e){toast('Could not remove the vault file: '+e.message,'error');return}}await dbDel('chats',c.id);state.chats=state.chats.filter(x=>x.id!==c.id);renderAll()}}})}
 }
-function renderModelsView(){const e=$('#view-models');const providers=Object.entries(PROVIDERS);e.innerHTML=`<h1 class="section-title">Models & providers</h1><p class="section-sub">Bring your own API key. Requests go directly from this browser to the selected provider.</p><div class="cards">${providers.map(([id,p])=>`<div class="card"><div style="display:flex;align-items:center;gap:10px;margin-bottom:12px"><div class="provider-logo">${p.icon}</div><div><h3 style="margin:0">${p.name}</h3><small style="color:var(--muted);font-size:10px">${state.credentials[id]?'Connected in this tab':'Not connected'}</small></div></div><p>${id==='custom'?'Connect an OpenAI-compatible endpoint.':'Use your own provider key and model access.'}</p><div style="display:flex;gap:7px;margin-top:15px"><button class="btn primary" data-provider="${id}">${state.credentials[id]?'Manage':'Connect'}</button>${id===state.provider?'<span class="tag" style="align-self:center">Active</span>':''}</div></div>`).join('')}</div><div class="card" style="margin-top:15px"><div class="setting-row"><div><strong>Current model</strong><small>${esc(state.model||'No model selected')}</small></div><button class="btn" id="chooseModel">Choose model</button></div><div class="setting-row"><div><strong>Refresh model list</strong><small>Fetch the latest catalogue from the active provider.</small></div><button class="btn" id="refreshModelsView">↻ Refresh</button></div></div><div class="notice warning">Model filtering depends on provider metadata. The app excludes known embedding, audio, image, moderation and other non-chat models. OpenAI-compatible model lists may not expose enough information to prove text-to-text support; confirm model capabilities with the provider.</div>`;$$('[data-provider]').forEach(b=>b.onclick=()=>{state.provider=b.dataset.provider;openProviderModal()});$('#chooseModel').onclick=openModelPicker;$('#refreshModelsView').onclick=async()=>{try{await fetchModels();toast(state.models.length+' eligible models loaded','success')}catch(e){toast(e.message,'error')}}}
-function renderSettingsView(){const e=$('#view-settings');e.innerHTML=`<h1 class="section-title">Settings</h1><p class="section-sub">Customize your workspace and manage local data.</p><div class="card"><div class="setting-row"><div><strong>Local Markdown vault</strong><small>${esc(vaultStorageDescription())}</small></div><button class="btn primary" id="vaultSetting">${state.vaultMode==='opfs'?'Vault options':state.vaultReady?'Change folder':'Choose folder'}</button></div><div class="setting-row"><div><strong>Import Markdown files</strong><small>Bring existing notes or conversations into this workspace.</small></div><button class="btn" id="importSetting">Import .md</button></div><div class="setting-row"><div><strong>Import an existing vault folder</strong><small>Import a folder tree of Markdown notes, including nested folders.</small></div><button class="btn" id="importFolderSetting">Import folder</button></div><div class="setting-row"><div><strong>Import / export ZIP</strong><small>Move a complete vault between mobile and desktop browsers.</small></div><div style="display:flex;gap:6px;flex-wrap:wrap"><button class="btn" id="importZipSetting">Import ZIP</button><button class="btn" id="exportSetting">Export ZIP</button></div></div></div><div class="card" style="margin-top:13px"><div class="setting-row"><div><strong>Appearance</strong><small>Use the current dark workspace theme.</small></div><span class="tag">Dark</span></div><div class="setting-row"><div><strong>Active provider</strong><small>${esc(PROVIDERS[state.provider]?.name||'Custom')} · ${esc(state.model||'No model selected')}</small></div><button class="btn" id="providerSetting">Manage</button></div><div class="setting-row"><div><strong>Clear in-memory API keys</strong><small>Remove credentials from this tab without changing your files.</small></div><button class="btn danger" id="clearKeys">Clear keys</button></div></div><div class="card" style="margin-top:13px"><div class="setting-row"><div><strong>Browser & storage compatibility</strong><small>${esc(browserEnvironmentLabel())} · ${BROWSER_ENV.directFolderPicker?'direct folder picker available':'no direct folder picker'} · ${BROWSER_ENV.opfs?'private local storage available':'private local storage unavailable'} · ${BROWSER_ENV.folderInput?'folder import supported':'folder import unavailable'}</small></div><span class="tag">${BROWSER_ENV.directFolderPicker?'Direct folders':BROWSER_ENV.opfs?'Private vault':'Import / export'}</span></div><div class="setting-row"><div><strong>Current vault mode</strong><small>${esc(vaultStorageDescription())}</small></div></div></div><div class="card" style="margin-top:13px"><h3>Privacy & prototype notes</h3><p>• Storage depends on browser capabilities: some browsers can write to a selected folder, while mobile browsers may use private site storage with Markdown/ZIP import and export.<br>• API keys are kept in memory only and disappear on reload.<br>• AI requests and any attached text are sent to the selected provider when you press Send.<br>• AnyDoc conversion runs locally in WebAssembly after its converter is downloaded from the CDN.<br>• This is a browser prototype, not a security-audited production app.</p></div>`;
+function renderModelsView(){const e=$('#view-models');const providers=Object.entries(PROVIDERS);e.innerHTML=`<h1 class="section-title">Models & providers</h1><p class="section-sub">Bring your own API key. Requests go directly from this browser to the selected provider.</p><div class="cards">${providers.map(([id,p])=>`<div class="card"><div style="display:flex;align-items:center;gap:10px;margin-bottom:12px"><div class="provider-logo">${p.icon}</div><div><h3 style="margin:0">${p.name}</h3><small style="color:var(--muted);font-size:10px">${state.credentials[id]?'Connected':state.credentialsLocked?'Saved in vault · locked':'Not connected'}</small></div></div><p>${id==='custom'?'Connect an OpenAI-compatible endpoint.':'Use your own provider key and model access.'}</p><div style="display:flex;gap:7px;margin-top:15px"><button class="btn primary" data-provider="${id}">${state.credentials[id]||state.credentialsLocked?'Manage':'Connect'}</button>${id===state.provider?'<span class="tag" style="align-self:center">Active</span>':''}</div></div>`).join('')}</div><div class="card" style="margin-top:15px"><div class="setting-row"><div><strong>Current model</strong><small>${esc(state.model||'No model selected')}</small></div><button class="btn" id="chooseModel">Choose model</button></div><div class="setting-row"><div><strong>Refresh model list</strong><small>Fetch the latest catalogue from the active provider.</small></div><button class="btn" id="refreshModelsView">↻ Refresh</button></div></div><div class="notice warning">Model filtering depends on provider metadata. The app excludes known embedding, audio, image, moderation and other non-chat models. OpenAI-compatible model lists may not expose enough information to prove text-to-text support; confirm model capabilities with the provider.</div>`;$$('[data-provider]').forEach(b=>b.onclick=()=>{state.provider=b.dataset.provider;openProviderModal()});$('#chooseModel').onclick=openModelPicker;$('#refreshModelsView').onclick=async()=>{try{if(!state.credentials[state.provider]?.key&&await vaultHasSavedCredentials()){if(!await unlockCredentialVault())return;}await fetchModels();toast(state.models.length+' eligible models loaded','success')}catch(e){toast(e.message,'error')}}}
+function renderSettingsView(){const e=$('#view-settings');e.innerHTML=`<h1 class="section-title">Settings</h1><p class="section-sub">Customize your workspace and manage local data.</p><div class="card"><div class="setting-row"><div><strong>Conversation storage</strong><small>Chats are saved in this browser using IndexedDB. ${state.browserStoragePersistent===true?"The browser granted persistent storage.":state.browserStoragePersistent===false?"The browser may evict site data; export backups regularly.":"Storage persistence status is not available."}</small></div><span class="tag">Browser only</span></div><div class="setting-row"><div><strong>Markdown vault for notes & assets</strong><small>${esc(vaultStorageDescription())}</small></div><button class="btn primary" id="vaultSetting">${state.vaultMode==='opfs'?'Vault options':state.vaultReady?'Change folder':'Choose folder'}</button></div><div class="setting-row"><div><strong>Import Markdown files</strong><small>Import Markdown notes into the selected vault. Imported chat Markdown is added to browser chat storage.</small></div><button class="btn" id="importSetting">Import .md</button></div><div class="setting-row"><div><strong>Import an existing vault folder</strong><small>Import a folder tree of Markdown notes, including nested folders.</small></div><button class="btn" id="importFolderSetting">Import folder</button></div><div class="setting-row"><div><strong>Import / export ZIP</strong><small>Back up browser-stored chats together with notes, credentials and attachments from the connected vault.</small></div><div style="display:flex;gap:6px;flex-wrap:wrap"><button class="btn" id="importZipSetting">Import chat / workspace ZIP</button><button class="btn" id="exportSetting">Export workspace ZIP</button></div></div></div><div class="card" style="margin-top:13px"><div class="setting-row"><div><strong>Appearance</strong><small>Use the current dark workspace theme.</small></div><span class="tag">Dark</span></div><div class="setting-row"><div><strong>Active provider</strong><small>${esc(PROVIDERS[state.provider]?.name||'Custom')} · ${esc(state.model||'No model selected')}</small></div><button class="btn" id="providerSetting">Manage</button></div><div class="setting-row"><div><strong>Encrypted provider credentials</strong><small>${state.credentialsLocked?'Saved in this vault · locked for this session':Object.keys(state.credentials).length?'Unlocked in memory · encrypted copy saved in vault':'No saved credentials'}.</small></div><button class="btn danger" id="clearKeys">${Object.keys(state.credentials).length?'Lock credentials':'Lock / clear'}</button></div></div><div class="card" style="margin-top:13px"><div class="setting-row"><div><strong>Browser & storage compatibility</strong><small>${esc(browserEnvironmentLabel())} · ${BROWSER_ENV.directFolderPicker?'direct folder picker available':'no direct folder picker'} · ${BROWSER_ENV.opfs?'private local storage available':'private local storage unavailable'} · ${BROWSER_ENV.folderInput?'folder import supported':'folder import unavailable'}</small></div><span class="tag">${BROWSER_ENV.directFolderPicker?'Direct folders':BROWSER_ENV.opfs?'Private vault':'Import / export'}</span></div><div class="setting-row"><div><strong>Vault data location (not chat content)</strong><small>${esc(vaultStorageDescription())}</small></div></div></div><div class="card" style="margin-top:13px"><h3>Privacy & storage</h3><p>• Storage depends on browser capabilities: some browsers can write to a selected folder, while mobile browsers may use private site storage with Markdown/ZIP import and export.<br>• API keys are encrypted in Settings/credentials.enc using AES-256-GCM and PBKDF2. The vault password is never stored; unlock again after restarting the browser.<br>• AI requests and any attached text are sent to the selected provider when you press Send.<br>• AnyDoc conversion runs locally in WebAssembly after its converter is downloaded from the CDN.<br>• Conversations are stored only in this browser's IndexedDB, not in the selected vault. They remain after reloads in this same browser profile and site origin, but clearing site data or using another browser/device removes access; use Export ZIP for backups. Notes remain Markdown files in the selected vault. Original attachments and converted Markdown are saved under Attachments/. Provider settings and encrypted API credentials remain under Settings/ in the selected vault.</p></div>`;
 const feedbackCard=document.createElement('div');feedbackCard.className='card';feedbackCard.style.marginTop='13px';
 feedbackCard.innerHTML=`<h3 style="margin:0 0 5px">Sound & touch feedback</h3><p style="margin:0 0 10px;color:var(--muted);font-size:12px;line-height:1.6">Subtle locally generated clicks, occasional scroll ticks and gentle vibration. No speech or narration. Audio starts after your first interaction, as browser policies require.</p><div class="feedback-options"><label class="feedback-row"><span><strong>Interaction sounds</strong><small>Soft clicks for navigation, opening panels and actions.</small></span><input id="feedbackSound" type="checkbox" ${feedbackPrefs.sound?'checked':''}></label><label class="feedback-row"><span><strong>Gear-like scrolling texture</strong><small>A quiet tick after a short amount of user scrolling.</small></span><input id="feedbackScroll" type="checkbox" ${feedbackPrefs.scroll?'checked':''}></label><label class="feedback-row"><span><strong>Haptic feedback</strong><small>Short vibration on supported Android devices and browsers.</small></span><input id="feedbackHaptics" type="checkbox" ${feedbackPrefs.haptics?'checked':''}></label><div class="feedback-row" style="display:block"><div style="display:flex;justify-content:space-between;gap:12px"><span><strong>Sound volume</strong><small>Keep it subtle during long sessions.</small></span></div><div class="feedback-volume" style="margin-top:10px"><input id="feedbackVolume" type="range" min="0" max="100" value="${Math.round(feedbackPrefs.volume*100)}"><output id="feedbackVolumeValue">${Math.round(feedbackPrefs.volume*100)}%</output></div></div></div><div style="display:flex;justify-content:flex-end;margin-top:13px"><button class="btn" id="previewFeedback">♫ Preview feedback</button></div>`;
 e.appendChild(feedbackCard);
@@ -1080,7 +1497,7 @@ $('#feedbackScroll').onchange=e=>{feedbackPrefs.scroll=e.target.checked;saveFeed
 $('#feedbackHaptics').onchange=e=>{feedbackPrefs.haptics=e.target.checked;saveFeedbackPrefs();if(feedbackPrefs.haptics)vibrateFeedback('success')};
 $('#feedbackVolume').oninput=e=>{feedbackPrefs.volume=Number(e.target.value)/100;$('#feedbackVolumeValue').textContent=e.target.value+'%';saveFeedbackPrefs()};
 $('#previewFeedback').onclick=()=>{const was=feedbackPrefs.sound;feedbackPrefs.sound=true;playFeedback('tap');setTimeout(()=>playFeedback('success',{haptic:false}),110);feedbackPrefs.sound=was;vibrateFeedback('success')};
-$('#vaultSetting').onclick=pickVault;$('#importSetting').onclick=()=>{const x=document.createElement('input');x.type='file';x.accept='.md';x.multiple=true;x.onchange=async()=>{for(const f of x.files){const r=parseMarkdown(await f.text(),f.name);r.id=uid();state.chats.unshift(r);await persist(r)}renderAll()};x.click()};$('#importFolderSetting').onclick=openVaultFolderImport;$('#importZipSetting').onclick=()=>$('#vaultZipImportInput').click();$('#exportSetting').onclick=exportVaultZip;$('#providerSetting').onclick=openProviderModal;$('#clearKeys').onclick=()=>{state.credentials={};toast('In-memory keys cleared','success');renderView()}}
+$('#vaultSetting').onclick=pickVault;$('#importSetting').onclick=()=>{const x=document.createElement('input');x.type='file';x.accept='.md';x.multiple=true;x.onchange=async()=>{let imported=0,skipped=0;for(const f of x.files){const r=parseMarkdown(await f.text(),f.name);r.id=uid();if(r.kind==='chat'||state.vaultReady){if(await persist(r)){state.chats.unshift(r);imported++}else skipped++}else skipped++}renderAll();toast(`Imported ${imported} document(s) into their correct storage locations${skipped?' · '+skipped+' skipped (notes need a vault)':''}`,'success')};x.click()};$('#importFolderSetting').onclick=openVaultFolderImport;$('#importZipSetting').onclick=()=>$('#vaultZipImportInput').click();$('#exportSetting').onclick=exportVaultZip;$('#providerSetting').onclick=openProviderModal;$('#clearKeys').onclick=lockCredentials}
 function globalSearch(){state.filter=$('#globalSearch').value||'';if(['chats','notes','favorites','vault','trash'].includes(state.view))renderView()}
 $('#globalSearch').addEventListener('input',globalSearch);
 $('#vaultFolderImportInput').addEventListener('change',async e=>{await importVaultFolderFiles(e.target.files);e.target.value=''});
@@ -1100,9 +1517,8 @@ window.addEventListener('popstate',event=>{
  else{toast('Press Back again to leave BYOK');}
 });
 initScrollFeedback();
-// First-run demo data makes the interface useful before a provider is configured.
-async function seed(){if(state.chats.length)return;const c=newRecord('chat','Chats');c.title='Welcome to BYOK';c.messages=[{role:'assistant',createdAt:new Date().toISOString(),content:'## Your AI workspace is ready\n\nWelcome! BYOK is designed around one simple idea: **every conversation is a document**.\n\n- Connect a provider from **Models & providers**.\n- Choose a local folder in **Vault files** to create real `.md` files.\n- Attach a document to convert it to Markdown with AnyDoc.\n- Start a new chat and your conversation will autosave.\n\nThis welcome note is local demo content. No AI provider is connected yet.'}];state.chats.push(c);await persist(c)}
-await init();if(!state.chats.length)await seed();if(!state.activeId){const first=state.chats.find(c=>!c.deleted&&c.kind==='chat');if(first)state.activeId=first.id}renderAll();const initialNav=state.activeId?{view:'chat',activeId:state.activeId,folder:state.folder,filter:state.filter}:navSnapshot();initializeNavigationHistory(initialNav);if(state.activeId)openChat(state.activeId,{push:false});
+// Restore the most recently opened real document, if one exists.
+await init();if(!state.activeId){const first=state.chats.find(c=>!c.deleted&&c.kind==='chat');if(first)state.activeId=first.id}renderAll();const initialNav=state.activeId?{view:'chat',activeId:state.activeId,folder:state.folder,filter:state.filter}:navSnapshot();initializeNavigationHistory(initialNav);if(state.activeId)openChat(state.activeId,{push:false});
 </script>
 </body>
 </html>
