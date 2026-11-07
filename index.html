@@ -438,7 +438,7 @@ body:has(#view-chat.active) .top-title { max-width:min(55vw,620px);overflow:hidd
   .composer-area { max-width:none;padding-top:8px;padding-bottom:3px; }
   .composer { border-radius:25px;padding:10px 11px 8px; }
   .composer textarea { min-height:45px;max-height:145px;font-size:16px;padding:6px 8px; }
-  .composer-left .icon-btn,#promptSettings { width:34px;height:34px; }
+  .composer-left .icon-btn { width:34px;height:34px; }
   .send { width:37px;height:37px; }
   #providerHint { max-width:43vw;overflow:hidden;text-overflow:ellipsis;white-space:nowrap; }
   .composer-hint { display:none; }
@@ -542,8 +542,7 @@ body:has(#view-chat.active) .top-title { max-width:min(55vw,620px);overflow:hidd
 .composer-area.is-compact { padding-top: 5px; }
 .composer-area.is-compact .attachment-strip,
 .composer-area.is-compact .composer-hint,
-.composer-area.is-compact #providerHint,
-.composer-area.is-compact #promptSettings {
+.composer-area.is-compact #providerHint {
   display: none !important;
 }
 .composer-area.is-compact .composer {
@@ -599,36 +598,118 @@ body:has(#view-chat.active) .top-title { max-width:min(55vw,620px);overflow:hidd
   .composer-area .attachment-strip { transition: none !important; }
 }
 
+
+/* Obsidian-inspired file explorer and document reader refresh */
+:root{--bg:#1d1d1d;--panel:#252525;--panel2:#292929;--panel3:#333333;--line:#3b3b3b;--text:#e7e7e7;--muted:#b1b1b1;--faint:#777;--purple:#b8a0e8;--purple2:#d0bfff;--cyan:#85c7d4;--green:#74c9a4;--shadow:0 18px 55px #0008;--app-font-family:Inter,Roboto,system-ui,sans-serif;--reader-font-size:16px}
+html,body{font-family:var(--app-font-family);font-size:16px;background:var(--bg)}
+body{background:#1d1d1d}
+button,input,textarea,select{font-family:var(--app-font-family)}
+.app{grid-template-columns:300px minmax(0,1fr)}
+.sidebar{background:#202020;border-right:1px solid #343434;padding:16px 12px 12px}
+.sidebar-scroll{padding:0 2px 12px}
+.explorer-heading{display:flex;align-items:center;justify-content:space-between;padding:9px 10px 15px}
+.explorer-brand{display:flex;align-items:center;gap:12px}.explorer-brand .logo{width:38px;height:38px;background:#353535;box-shadow:none;border:1px solid #464646;border-radius:13px;color:#dedede}.explorer-brand b{font-size:20px;font-weight:650;letter-spacing:-.3px}.explorer-brand small{display:block;margin-top:2px;color:#969696;font-size:10px;letter-spacing:1.3px}
+.sidebar-close{display:none!important}
+.explorer-toolbar{display:flex;align-items:center;justify-content:space-around;gap:3px;padding:4px 0 15px;border-bottom:1px solid #ffffff0c}
+.explorer-toolbar button{width:44px;height:43px;border:0;border-radius:12px;background:transparent;color:#bcbcbc;display:grid;place-items:center}.explorer-toolbar button:hover{background:#ffffff0c;color:#fff}.explorer-toolbar svg{width:23px;height:23px}
+.explorer-search,.settings-search{display:flex;align-items:center;gap:12px;background:#303030;border:1px solid #414141;border-radius:24px;padding:0 15px;height:48px}.explorer-search{margin:13px 5px 12px}.explorer-search svg,.settings-search svg{width:19px;color:#a5a5a5}.explorer-search input,.settings-search input{width:100%;min-width:0;border:0;outline:0;background:transparent;color:var(--text);font-size:15px}.explorer-search input::placeholder,.settings-search input::placeholder{color:#888}
+.explorer-label{padding:13px 12px 6px;color:#8d8d8d;font-size:11px;letter-spacing:1.2px}
+.nav{gap:3px;padding:0 3px 10px}.nav-btn{min-height:43px;border-radius:11px;padding:9px 11px;font-size:15px;color:#c1c1c1;gap:12px}.nav-btn .ico{width:19px}.nav-btn svg{width:18px;height:18px}.nav-btn.active{background:#343434;color:#f1f1f1;box-shadow:inset 3px 0 #b6a0e8}.nav-btn .count{font-size:12px;color:#929292}
+.folder-head{padding:13px 11px 7px;border-top:1px solid #ffffff0c}.folder-head .nav-label{padding:0;color:#969696;font-size:11px}.folder-head-hint{font-size:10px;color:#747474}
+.file-tree{display:flex;flex-direction:column;gap:1px;padding:0 2px}.tree-folder-row{display:flex;align-items:center;gap:2px;min-height:40px;padding-left:calc(3px + var(--tree-level)*13px);border-radius:9px}.tree-folder-row:hover,.tree-document:hover{background:#ffffff09}.tree-folder-row.selected{background:#353535}.tree-disclosure,.tree-folder-label,.tree-more,.tree-document{border:0;background:transparent;color:#d0d0d0}.tree-disclosure{width:25px;height:32px;display:grid;place-items:center;color:#888;padding:0}.tree-disclosure svg{width:16px;height:16px}.tree-folder-label{display:flex;align-items:center;gap:10px;flex:1;min-width:0;height:38px;text-align:left;font-size:15px;padding:0 4px}.tree-folder-label svg{width:18px;height:18px;color:#b9b9b9;flex:0 0 auto}.tree-folder-label span,.tree-document span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.tree-folder-label small{margin-left:auto;color:#858585;font-size:11px}.tree-more{width:29px;height:31px;display:grid;place-items:center;color:#777;opacity:0}.tree-folder-row:hover .tree-more{opacity:1}.tree-more svg{width:17px}.tree-children{display:flex;flex-direction:column}.tree-document{display:flex;align-items:center;gap:10px;min-height:38px;padding:5px 8px 5px calc(34px + var(--tree-level)*13px);border-radius:8px;text-align:left;font-size:14px;color:#bdbdbd;width:100%}.tree-document svg{width:16px;height:16px;color:#929292;flex:0 0 auto}.tree-document.active{color:#eee;background:#343434}.tree-document.active svg{color:#c8b5f2}.tree-favorite{margin-left:auto;color:#c7ad6a!important;width:13px!important}.tree-empty{padding:16px 12px;color:#888;font-size:13px}
+.sidebar-bottom{border-top:1px solid #ffffff12;padding:12px 3px 3px;background:#202020}.sidebar-vault-switch{width:100%;height:51px;border:0;background:#333;border-radius:24px;padding:0 16px;color:#e1e1e1;display:flex;align-items:center;justify-content:space-between;font-size:16px}.sidebar-vault-switch span{display:flex;align-items:center;gap:10px}.sidebar-vault-switch svg{width:20px;height:20px;color:#bdbdbd}.sidebar-vault-meta{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:12px 9px 6px}.vault-meta-copy{min-width:0;display:flex;flex-direction:column;gap:3px}.vault-meta-copy b{font-size:20px;font-weight:650}.vault-meta-copy small{font-size:12px;color:#aaa;overflow-wrap:anywhere}.vault-settings-btn{width:48px;height:48px;border:0;border-radius:50%;background:#333;color:#ddd;display:grid;place-items:center}.vault-settings-btn svg{width:22px;height:22px}.sidebar-provider-link{display:flex;gap:10px;align-items:center;width:100%;padding:10px 12px;border:0;background:transparent;color:#aaa;text-align:left;font-size:14px}.sidebar-provider-link svg{width:18px}
+.main{background:#1d1d1d}.topbar{background:#202020;border-bottom:1px solid #333}.main-scroll{scrollbar-color:#555 transparent}.view{font-size:16px}.section-title{font-size:25px;letter-spacing:-.4px}.section-sub{font-size:14px;color:#aaa}
+.file-item{background:#252525;border-color:#383838;border-radius:13px}.file-item b{font-size:16px}.file-item small{font-size:12px}
+/* One clean document canvas; its own controls float above the text. */
+.app.document-open .topbar,.app.document-open .mobile-nav{display:none!important}
+.app.document-open .main-scroll{height:100%;flex:1 1 100%;min-height:0;padding:0}
+.app.document-open #view-chat.view{padding:0;height:100%;max-width:none}
+.reader-wrap{height:100%;max-width:920px;margin:0 auto;padding:0 25px 15px;position:relative}
+.reader-topbar{height:62px;min-height:62px;display:flex;align-items:center;gap:12px;padding:5px 0 10px;transition:height .22s ease,min-height .22s ease,opacity .16s ease,transform .22s ease,padding .22s ease;overflow:hidden}
+.reader-title-block{min-width:0;flex:1;display:flex;flex-direction:column;gap:3px}.reader-title-block b{font-size:16px;font-weight:650;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.reader-title-block small{font-size:11px;color:#929292;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.reader-actions{display:flex;align-items:center;gap:8px}.reader-icon,.reader-model{height:42px;border:0;border-radius:22px;background:#303030;color:#ddd;display:flex;align-items:center;justify-content:center;gap:8px;padding:0 13px}.reader-icon{width:43px;padding:0}.reader-icon svg{width:20px;height:20px}.reader-model{max-width:190px;font-size:12px}.reader-model svg{width:16px;height:16px;flex:0 0 auto}.reader-model span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.reader-wrap .messages{flex:1;min-height:0;max-width:850px;width:100%;margin:0 auto;padding:34px 10px 28px;scrollbar-width:none}.reader-wrap .messages::-webkit-scrollbar{display:none}.reader-wrap .message{margin-bottom:30px}.reader-wrap .message.assistant .msg-avatar{display:none}.reader-wrap .message.assistant .msg-content{max-width:100%;width:100%}.reader-wrap .message.user .msg-content{background:#303030;border:1px solid #444;border-radius:20px;padding:12px 17px;box-shadow:none}.reader-wrap .message .msg-role{font-size:12px;color:#929292;margin-bottom:8px}.reader-wrap .md{font-size:var(--reader-font-size);line-height:1.78;color:#e6e6e6}.reader-wrap .md h1,.reader-wrap .md h2,.reader-wrap .md h3{color:#f3f3f3}
+.reader-dock{display:none;align-items:center;justify-content:center;gap:2px;width:max-content;max-width:calc(100% - 12px);margin:7px auto 7px;padding:6px 8px;border:1px solid #414141;border-radius:27px;background:#303030ee;backdrop-filter:blur(18px);box-shadow:0 8px 25px #0007;transition:opacity .18s ease,transform .22s ease,max-height .22s ease}
+.reader-dock button{width:46px;height:42px;border:0;border-radius:20px;background:transparent;color:#c9c9c9;display:grid;place-items:center}.reader-dock button:hover{background:#ffffff10;color:#fff}.reader-dock svg{width:21px;height:21px}
+.reader-restore{display:none;position:absolute;z-index:22;top:12px;right:18px;border:1px solid #484848;border-radius:24px;padding:9px 14px;background:#303030ee;color:#eee;align-items:center;gap:8px;backdrop-filter:blur(14px)}.reader-restore svg{width:17px}
+.app.reader-mode .reader-topbar,.app.reader-mode .reader-dock,.app.reader-mode .sidebar{transition:height .22s ease,min-height .22s ease,width .22s ease,padding .22s ease,opacity .16s ease,transform .22s ease,margin .22s ease}
+.app.reader-chrome-hidden .reader-topbar{height:0!important;min-height:0!important;padding:0!important;margin:0!important;opacity:0;transform:translateY(-10px);pointer-events:none;border:0}
+.app.reader-chrome-hidden .reader-dock{max-height:0!important;opacity:0;transform:translateY(16px);padding-top:0;padding-bottom:0;margin-top:0;margin-bottom:0;border-width:0;pointer-events:none;overflow:hidden}
+.app.reader-chrome-hidden .reader-restore{display:flex}
+.app.reader-chrome-hidden .sidebar{width:0!important;padding-left:0!important;padding-right:0!important;border:0!important;opacity:0;transform:translateX(-100%);overflow:hidden;pointer-events:none}
+.app.reader-chrome-hidden{grid-template-columns:0 minmax(0,1fr)!important}
+.reader-wrap .composer-area{padding-bottom:5px}.reader-wrap .composer{background:#272727;border:1px solid #414141;border-radius:28px;box-shadow:0 8px 28px #0005}.reader-wrap .composer:focus-within{border-color:#8b82a0;box-shadow:0 0 0 2px #b8a0e81a}.reader-wrap .composer textarea{font-size:16px}.reader-wrap .send{background:#dedede;color:#222;box-shadow:none;border-radius:50%}.reader-wrap .composer-left .icon-btn{background:#333;border:0;color:#ddd}.reader-wrap .composer-hint{display:none}
+.note-reader-wrap .note-body-scroll{flex:1;min-height:0;overflow:auto;overscroll-behavior:contain;-webkit-overflow-scrolling:touch;padding:45px clamp(8px,5vw,45px) 50px;scrollbar-width:thin;scrollbar-color:#555 transparent}
+.note-document{max-width:790px;margin:0 auto;font-size:var(--reader-font-size);line-height:1.8}.note-editor{display:block;width:100%;max-width:790px;height:100%;min-height:350px;margin:0 auto;padding:0;border:0;outline:0;resize:none;background:transparent;color:var(--text);font:var(--reader-font-size)/1.8 var(--app-font-family)}
+.note-dock{display:none}.note-reader-wrap .reader-dock button:nth-child(3){background:#444;color:#fff}
+.app.reader-chrome-hidden .note-reader-wrap .reader-dock{display:none}
+/* Screenshot-inspired settings: searchable categories and a calm, large-row list. */
+.settings-page{width:100%;max-width:760px;margin:0 auto;padding:34px clamp(18px,4vw,38px) 60px}.settings-header{display:flex;align-items:center;justify-content:center;position:relative;margin-bottom:34px;min-height:54px;text-align:center}.settings-header h1{font-size:25px;font-weight:650;letter-spacing:-.4px;margin:0}.settings-header small{display:block;color:#aaa;font-size:13px;margin-top:5px}.settings-close{position:absolute;right:0;top:0;width:52px;height:52px;border:0;border-radius:50%;background:#333;color:#ddd;display:grid;place-items:center}.settings-close svg{width:25px;height:25px}.settings-search{height:58px;border-radius:30px;margin-bottom:39px;background:#303030}.settings-search input{font-size:16px}.settings-caption,.settings-group-label{font-size:19px;font-weight:600;color:#bcbcbc;margin:0 0 15px 4px}.settings-category-card,.settings-group{background:#272727;border-radius:29px;padding:0 20px;overflow:hidden;border:1px solid #2e2e2e}.settings-category{display:flex;align-items:center;gap:21px;width:100%;min-height:81px;padding:15px 7px;border:0;border-bottom:1px solid #3b3b3b;background:transparent;color:#dedede;text-align:left}.settings-category:last-child{border-bottom:0}.settings-category>svg:first-child{width:26px;height:26px;color:#d0d0d0;flex:0 0 auto}.settings-category span{display:flex;flex-direction:column;gap:3px;min-width:0;flex:1}.settings-category b{font-size:20px;font-weight:500}.settings-category small{font-size:12px;color:#9c9c9c}.settings-chevron{width:21px;color:#858585}.settings-category:hover{background:#ffffff06}.settings-detail{margin-top:0}.settings-detail-head{display:flex;align-items:center;gap:14px;margin-bottom:25px}.settings-detail-head>div{display:flex;flex-direction:column;gap:3px}.settings-detail-head b{font-size:21px}.settings-detail-head small{font-size:13px;color:#999}.settings-back{width:43px;height:43px;border:0;border-radius:50%;background:#333;color:#ddd;display:grid;place-items:center}.settings-back svg{width:20px}.settings-group-label{margin-top:28px;margin-bottom:14px;font-size:17px}.settings-group{padding:0 19px}.setting-option{min-height:76px;display:flex;align-items:center;justify-content:space-between;gap:15px;padding:15px 4px;border-bottom:1px solid #3a3a3a}.setting-option:last-child{border-bottom:0}.setting-option-copy{min-width:0;display:flex;flex-direction:column;gap:5px}.setting-option-copy b{font-size:16px;font-weight:550;color:#e1e1e1}.setting-option-copy small{font-size:13px;line-height:1.5;color:#9f9f9f;max-width:460px}.setting-option-control{display:flex;justify-content:flex-end;align-items:center;flex:0 0 auto;max-width:52%}.settings-tag{border-radius:16px;background:#383838;color:#aaa;padding:6px 10px;font-size:11px;white-space:nowrap}.settings-tag.enabled{background:#254034;color:#9bd3b6}.settings-action{min-height:40px;padding:8px 12px;border:1px solid #484848;border-radius:22px;background:#353535;color:#e1e1e1;font-size:13px;display:inline-flex;align-items:center;justify-content:center;gap:7px;white-space:nowrap}.settings-action svg{width:16px;height:16px}.settings-action-stack{display:flex;flex-direction:column;gap:6px}.settings-select{min-height:42px;max-width:165px;border:1px solid #484848;border-radius:14px;background:#353535;color:#eee;padding:8px 10px;font-size:13px}.settings-switch{appearance:none;width:47px;height:27px;border-radius:20px;background:#555;position:relative;cursor:pointer;flex:0 0 auto}.settings-switch:checked{background:#8f7bb0}.settings-switch:before{content:"";position:absolute;left:3px;top:3px;width:21px;height:21px;border-radius:50%;background:#ddd;transition:transform .18s}.settings-switch:checked:before{transform:translateX(20px);background:#fff}.font-size-control{display:flex;align-items:center;gap:10px;width:190px}.font-size-control input{width:100%;min-width:80px;accent-color:#bba6df}.font-size-control output{min-width:38px;text-align:right;color:#bbb;font-size:13px}.type-preview{font-size:var(--reader-font-size);max-width:160px;color:#ccc;line-height:1.35}.settings-note{margin:15px 4px;padding:14px 16px;border-radius:15px;background:#2a2a2a;color:#aaa;font-size:13px;line-height:1.6}.settings-inline-actions{display:flex;justify-content:flex-end;margin:14px 0}.hotkey-list .setting-option{min-height:61px}.hotkey-list kbd{background:#383838;border:1px solid #505050;border-radius:8px;padding:6px 8px;color:#ddd;font-size:11px;white-space:nowrap}
+.doc-search-results{display:grid;gap:7px;max-height:45vh;overflow:auto;margin-top:12px}.search-hit{display:flex;flex-direction:column;gap:5px;text-align:left;padding:11px;border:1px solid #383838;border-radius:12px;background:#292929;color:#ddd}.search-hit small{color:#999;font-size:11px}
+.light-theme{--bg:#f2f2f2;--panel:#fff;--panel2:#f7f7f7;--line:#ddd;--text:#202020;--muted:#606060;color-scheme:light}.light-theme body,.light-theme .main,.light-theme .main-scroll{background:#f2f2f2;color:#202020}.light-theme .sidebar,.light-theme .sidebar-bottom{background:#fafafa;color:#222}.light-theme .nav-btn,.light-theme .tree-folder-label,.light-theme .tree-document{color:#444}.light-theme .settings-category-card,.light-theme .settings-group{background:#fff;border-color:#e2e2e2}.light-theme .settings-category,.light-theme .setting-option{border-color:#e6e6e6;color:#222}.light-theme .settings-category b,.light-theme .setting-option-copy b{color:#222}.light-theme .settings-search,.light-theme .explorer-search{background:#eee;border-color:#ddd}.light-theme .reader-wrap .composer{background:#fff;border-color:#ddd}.light-theme .reader-wrap .messages{color:#202020}.light-theme .reader-wrap .md{color:#202020}.light-theme .reader-wrap .md h1,.light-theme .reader-wrap .md h2,.light-theme .reader-wrap .md h3{color:#111}
+@media(max-width:850px){.app{grid-template-columns:260px minmax(0,1fr)}.sidebar{padding-inline:10px}}
+@media(max-width:650px){.app{display:block}.sidebar{width:min(350px,89vw);padding:calc(12px + env(safe-area-inset-top,0px)) 12px calc(12px + env(safe-area-inset-bottom,0px));}.sidebar-close{display:grid!important}.explorer-brand .logo{width:35px;height:35px}.explorer-toolbar button{width:43px}.sidebar-bottom{padding-bottom:5px}.reader-wrap{padding:calc(7px + env(safe-area-inset-top,0px)) 13px calc(4px + env(safe-area-inset-bottom,0px))}.reader-topbar{height:57px;min-height:57px;gap:8px}.reader-title-block b{font-size:15px}.reader-model{max-width:115px;padding:0 10px;font-size:11px}.reader-icon{width:40px;height:40px}.reader-wrap .messages{padding:23px 2px 22px}.reader-dock{display:flex;margin:5px auto 7px}.reader-wrap .composer-area{padding-bottom:calc(5px + env(safe-area-inset-bottom,0px))}.note-reader-wrap .note-body-scroll{padding:29px 6px 40px}.settings-page{padding:calc(18px + env(safe-area-inset-top,0px)) 17px calc(35px + env(safe-area-inset-bottom,0px))}.settings-header{margin-bottom:27px}.settings-header h1{font-size:24px}.settings-close{width:47px;height:47px}.settings-search{height:55px;margin-bottom:31px}.settings-category-card{padding:0 15px;border-radius:26px}.settings-category{min-height:77px;gap:17px}.settings-category b{font-size:19px}.settings-category small{font-size:11px}.settings-category>svg:first-child{width:24px;height:24px}.settings-group{padding:0 14px;border-radius:23px}.setting-option{gap:9px;align-items:center}.setting-option-copy b{font-size:15px}.setting-option-copy small{font-size:12px}.setting-option-control{max-width:48%}.settings-action{font-size:12px;padding:8px 10px}.font-size-control{width:145px}.reader-restore{top:calc(9px + env(safe-area-inset-top,0px));right:10px}.app.reader-chrome-hidden .sidebar{transform:translateX(-103%);width:min(350px,89vw)!important;opacity:1;pointer-events:auto}}
+@media(max-width:380px){.settings-page{padding-inline:13px}.settings-category{gap:12px;padding-inline:3px}.settings-category b{font-size:18px}.setting-option{align-items:flex-start;flex-direction:column}.setting-option-control{max-width:100%;width:100%;justify-content:flex-start}.font-size-control{width:100%}.reader-model{max-width:92px}.reader-wrap{padding-inline:9px}}
+@media(prefers-reduced-motion:reduce){.reader-topbar,.reader-dock,.sidebar,.settings-category,.settings-switch:before{transition:none!important}}
+
+
+/* Final Obsidian-like polish: consistent document typography, outline icons and mobile navigation. */
+:root{--reader-font-size:16px}
+.reader-wrap,.settings-page,.sidebar{font-family:var(--app-font-family)}
+.reader-wrap .md{font-family:var(--app-font-family);font-size:var(--reader-font-size)}
+.reader-wrap .md p,.reader-wrap .md li,.reader-wrap .md blockquote,.reader-wrap .md td,.reader-wrap .md th{font-size:inherit}
+.reader-wrap .md table{display:block;max-width:100%;overflow-x:auto;white-space:normal}
+.reader-wrap .reader-actions{display:flex;align-items:center;gap:7px}
+.reader-wrap .reader-icon{flex:0 0 auto}
+.mobile-nav button{gap:4px}
+.mobile-nav button i,.mobile-nav button svg{width:19px;height:19px;display:block;stroke-width:1.8}
+.mobile-nav button span{font-size:10px;line-height:1.1}
+.explorer-toolbar button:focus-visible,.tree-folder-label:focus-visible,.tree-document:focus-visible,.settings-category:focus-visible,.reader-icon:focus-visible{outline:2px solid #bca6e9;outline-offset:2px}
+.note-document{font-family:var(--app-font-family)}
+
+.model-list .btn{display:flex;align-items:center;gap:11px;text-align:left;min-height:47px}.model-list .btn svg{width:18px;height:18px;flex:0 0 auto;color:#c4c4c4;stroke-width:1.8}.model-list .btn.danger svg{color:#d58b8b}
 </style>
 </head>
 <body>
 <div class="app">
-  <aside class="sidebar" id="sidebar" aria-label="Workspace navigation">
+  <aside class="sidebar" id="sidebar" aria-label="Workspace file explorer">
     <div class="sidebar-scroll" id="sidebarScroll">
-    <div class="brand"><div class="logo"><span class="brand-symbol">✦</span></div><div><b>BYOK</b><small>YOUR AI · YOUR KEYS</small></div></div>
-    <button class="new-chat" id="newChat"><span>＋</span> New chat</button>
-    <div class="nav-label">Workspace</div>
-    <nav class="nav" id="mainNav">
-      <button class="nav-btn active" data-view="chats"><span class="ico">◫</span> All chats <span class="count" id="chatCount">0</span></button>
-      <button class="nav-btn" data-view="notes"><span class="ico">▤</span> Notes <span class="count" id="noteCount">0</span></button>
-      <button class="nav-btn" data-view="favorites"><span class="ico">☆</span> Favorites</button>
-      <button class="nav-btn" data-view="vault"><span class="ico">▣</span> Vault files</button>
-      <button class="nav-btn" data-view="trash"><span class="ico">⌫</span> Trash</button>
-    </nav>
-    <div class="folder-head"><div class="nav-label">Folders</div><button class="mini-btn" id="addFolder" title="Create folder">＋</button></div>
-    <div class="folder-list" id="folderList"></div>
+      <div class="explorer-heading">
+        <div class="explorer-brand"><div class="logo"><span class="brand-symbol">✦</span></div><div><b>Files</b><small>BYOK WORKSPACE</small></div></div>
+        <button class="icon-btn sidebar-close" id="sidebarClose" aria-label="Close file explorer"><i data-lucide="x"></i></button>
+      </div>
+      <div class="explorer-toolbar" aria-label="File actions">
+        <button id="newChat" title="New chat" aria-label="New chat"><i data-lucide="square-pen"></i></button>
+        <button id="quickNote" title="New note" aria-label="New note"><i data-lucide="file-plus-2"></i></button>
+        <button id="addFolder" title="New folder" aria-label="New folder"><i data-lucide="folder-plus"></i></button>
+        <button id="treeSort" title="Sort documents" aria-label="Sort documents"><i data-lucide="arrow-down-wide-narrow"></i></button>
+        <button id="collapseFolders" title="Collapse all folders" aria-label="Collapse all folders"><i data-lucide="chevrons-up-down"></i></button>
+      </div>
+      <div class="explorer-search"><i data-lucide="search"></i><input id="treeSearch" type="search" placeholder="Filter files…" autocomplete="off"></div>
+      <div class="nav-label explorer-label">Workspace</div>
+      <nav class="nav" id="mainNav">
+        <button class="nav-btn active" data-view="chats"><i data-lucide="messages-square" class="ico"></i> All chats <span class="count" id="chatCount">0</span></button>
+        <button class="nav-btn" data-view="notes"><i data-lucide="file-text" class="ico"></i> All notes <span class="count" id="noteCount">0</span></button>
+        <button class="nav-btn" data-view="favorites"><i data-lucide="star" class="ico"></i> Favorites</button>
+        <button class="nav-btn" data-view="trash"><i data-lucide="trash-2" class="ico"></i> Trash</button>
+      </nav>
+      <div class="folder-head"><div class="nav-label">Folders & documents</div><span class="folder-head-hint">Long-press for actions</span></div>
+      <div class="folder-list file-tree" id="folderList" role="tree" aria-label="Folders, chats and notes"></div>
     </div>
     <div class="sidebar-bottom">
-      <button class="nav-btn" data-view="models"><span class="ico">✧</span> Models & providers</button>
-      <button class="nav-btn" data-view="settings"><span class="ico">⚙</span> Settings</button>
-      <div class="profile"><div class="avatar">B</div><div><b style="font-size:12px">Local workspace</b><small id="vaultStatus">Browser storage</small></div></div>
+      <button class="sidebar-vault-switch" id="sidebarVault" type="button"><span><i data-lucide="folder"></i> Files</span><i data-lucide="chevrons-up-down"></i></button>
+      <div class="sidebar-vault-meta">
+        <div class="vault-meta-copy"><b id="sidebarVaultName">Documents</b><small id="vaultStatus">Browser storage</small><small id="sidebarVaultCounts">0 files · 0 folders</small></div>
+        <button class="vault-settings-btn" id="sidebarSettings" data-view="settings" aria-label="Settings" title="Settings"><i data-lucide="settings"></i></button>
+      </div>
+      <button class="sidebar-provider-link" data-view="models"><i data-lucide="sparkles"></i> Models & providers</button>
     </div>
   </aside>
   <div class="scrim" id="scrim"></div>
   <main class="main">
     <header class="topbar">
       <div class="top-left"><button class="icon-btn mobile-menu" id="menuBtn" aria-label="Open navigation menu" aria-expanded="false" aria-controls="sidebar">☰</button><div class="top-title" id="topTitle">All chats</div><span class="crumb desktop-only">/ Your workspace</span></div>
-      <div class="top-actions"><div class="searchbox"><span>⌕</span><input id="globalSearch" placeholder="Search your vault…" /></div><button class="icon-btn desktop-only" id="quickNote" title="New note">＋</button><button class="icon-btn mobile-new-chat" id="mobileNewChat" title="New chat" aria-label="Create a new chat">＋</button><button class="icon-btn" id="topSettings" title="Settings" aria-label="Settings">⚙</button></div>
+      <div class="top-actions"><div class="searchbox"><span>⌕</span><input id="globalSearch" placeholder="Search your vault…" /></div><button class="icon-btn desktop-only" id="topNewNote" title="New note" aria-label="New note">＋</button><button class="icon-btn mobile-new-chat" id="mobileNewChat" title="New chat" aria-label="Create a new chat">＋</button><button class="icon-btn" id="topSettings" title="Settings" aria-label="Settings">⚙</button></div>
     </header>
     <div class="main-scroll" id="mainScroll">
       <section class="view active" id="view-chats"></section>
@@ -640,7 +721,7 @@ body:has(#view-chat.active) .top-title { max-width:min(55vw,620px);overflow:hidd
       <section class="view" id="view-models"></section>
       <section class="view" id="view-settings"></section>
     </div>
-    <nav class="mobile-nav" id="mobileNav" aria-label="Primary navigation"><button data-view="chats" class="active"><span>◫</span>Chats</button><button data-view="notes"><span>▤</span>Notes</button><button data-view="vault"><span>▣</span>Vault</button><button data-view="models"><span>✧</span>Models</button><button data-view="settings"><span>⚙</span>Settings</button></nav>
+    <nav class="mobile-nav" id="mobileNav" aria-label="Primary navigation"><button data-view="chats" class="active"><i data-lucide="messages-square"></i><span>Chats</span></button><button data-view="notes"><i data-lucide="file-text"></i><span>Notes</span></button><button data-view="vault"><i data-lucide="folder"></i><span>Files</span></button><button data-view="models"><i data-lucide="sparkles"></i><span>Models</span></button><button data-view="settings"><i data-lucide="settings"></i><span>Settings</span></button></nav>
   </main>
 </div>
 <div class="toast-wrap" id="toasts"></div>
@@ -658,6 +739,7 @@ body:has(#view-chat.active) .top-title { max-width:min(55vw,620px);overflow:hidd
 <script src="https://cdn.jsdelivr.net/npm/katex@0.19.1/dist/contrib/auto-render.min.js" crossorigin="anonymous"></script>
 <!-- ZIP import/export fallback for browsers without a direct directory picker. -->
 <script src="https://cdn.jsdelivr.net/npm/jszip@3.10.1/dist/jszip.min.js" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/lucide@0.468.0/dist/umd/lucide.min.js" crossorigin="anonymous"></script>
 
 <script type="module">
 // BYOK local-first workspace. Conversations live in browser IndexedDB; notes, credentials and assets live in the selected vault.
@@ -672,6 +754,19 @@ const FOLDERS_FILE='folders.json';
 const FEEDBACK_KEY='byok-feedback-v1';
 const feedbackDefaults={sound:true,scroll:false,haptics:true,volume:0.32};
 let feedbackPrefs={...feedbackDefaults};
+const UI_PREFS_KEY='byok-ui-prefs-v1';
+const uiPrefsDefaults={theme:'dark',fontSize:16,fontFamily:'system',readerAutoHide:true,compactComposer:true,autoSave:true,spellcheck:true,defaultNoteView:'read'};
+let uiPrefs={...uiPrefsDefaults};
+try{const saved=JSON.parse(localStorage.getItem(UI_PREFS_KEY)||'{}');if(saved&&typeof saved==='object'&&!Array.isArray(saved))uiPrefs={...uiPrefsDefaults,...saved};}catch{}
+function saveUiPrefs(){try{localStorage.setItem(UI_PREFS_KEY,JSON.stringify(uiPrefs));}catch{}}
+function applyUiPrefs(){
+ document.documentElement.style.setProperty('--reader-font-size',(Number(uiPrefs.fontSize)||16)+'px');
+ const families={system:'Inter, Roboto, system-ui, sans-serif',serif:'Georgia, "Times New Roman", serif',mono:'ui-monospace, SFMono-Regular, Consolas, monospace'};
+ document.documentElement.style.setProperty('--app-font-family',families[uiPrefs.fontFamily]||families.system);
+ document.body.classList.toggle('light-theme',uiPrefs.theme==='light');
+}
+function renderIcons(root=document){try{window.lucide?.createIcons?.({root,attrs:{'stroke-width':1.8}});}catch(error){console.debug('Icon rendering unavailable:',error)}}
+applyUiPrefs();
 try {
  const savedFeedback=JSON.parse(localStorage.getItem(FEEDBACK_KEY)||'{}');
  if(savedFeedback && typeof savedFeedback==='object' && !Array.isArray(savedFeedback)) {
@@ -918,7 +1013,7 @@ async function init(){try{
  const localFolders=await dbGet('meta','folders');if(localFolders?.value)state.folders=[...new Set(['Chats','Notes','Projects',...localFolders.value])];
  try{state.browserStoragePersistent=typeof navigator.storage?.persist==='function'?await navigator.storage.persist():null;}catch{state.browserStoragePersistent=false;}
  const h=await getVaultHandle();
- if(h){state.vault=h;state.vaultMode='filesystem';if(await askPermission(h)){state.vaultName=h.name;state.vaultReady=true;$('#vaultStatus').textContent='Vault: '+h.name+' · notes & credentials';await loadVault();}else{$('#vaultStatus').textContent='Chats saved in browser · vault permission needed';}}
+ if(h){state.vault=h;state.vaultMode='filesystem';if(await askPermission(h)){state.vaultName=h.name;state.vaultReady=true;$('#vaultStatus').textContent='Vault: '+h.name+' · notes & assets';await loadVault();}else{$('#vaultStatus').textContent='Chats saved in browser · vault permission needed';}}
  else{
   const savedMode=await dbGet('meta','vaultMode');
   if((savedMode?.value==='opfs'||!BROWSER_ENV.directFolderPicker)&&navigator.storage&&typeof navigator.storage.getDirectory==='function'){
@@ -927,73 +1022,72 @@ async function init(){try{
  }
  const meta=await dbGet('meta','config');if(meta?.value){state.configs=meta.value.configs||{};state.provider=meta.value.provider||'openai';state.model=meta.value.model||'';}
  if(state.vault&&state.vaultReady){await loadVaultSettings();await saveConfig().catch(e=>console.warn('Settings cache remains local:',e));}
+  if(await vaultHasSavedCredentials())await unlockCredentialVault();
  const folders=await dbGet('meta','folders');if(folders?.value)state.folders=[...new Set([...state.folders,...folders.value])];
  const cached=await dbGet('meta','models:'+state.provider);if(!state.models.length&&cached?.value)state.models=cached.value;
  renderAll();
  }catch(e){console.error(e);toast('BYOK could not initialize local storage: '+e.message,'error');renderAll();}}
 function safeVaultSegments(path){return String(path||'').replace(/\\/g,'/').split('/').filter(Boolean).map(part=>part.trim()).filter(part=>part&&part!=='.'&&part!=='..'&&!/[\u0000-\u001f]/.test(part)&&!/[\\:*?"<>|]/.test(part));}
-let credentialVaultKey=null; // Derived non-extractable key; memory only.
-const CREDENTIAL_KDF_ITERATIONS=310000;
-const CREDENTIAL_AAD=new TextEncoder().encode('BYOK encrypted provider credentials v1');
+let credentialVaultKey=null; // Non-extractable AES key stored by this browser profile in IndexedDB.
+const CREDENTIAL_AAD=new TextEncoder().encode('BYOK encrypted provider credentials v2');
 let credentialEnvelopeCache=null;
+let legacyCredentialNoticeShown=false;
 function bytesToBase64(bytes){let binary='';for(const b of bytes)binary+=String.fromCharCode(b);return btoa(binary)}
 function base64ToBytes(value){const binary=atob(value);const out=new Uint8Array(binary.length);for(let i=0;i<binary.length;i++)out[i]=binary.charCodeAt(i);return out}
-async function deriveCredentialKey(passphrase,salt){
- if(!window.crypto?.subtle)throw new Error('Secure credential encryption requires HTTPS or localhost in this browser.');
- const material=await crypto.subtle.importKey('raw',new TextEncoder().encode(passphrase),'PBKDF2',false,['deriveKey']);
- return crypto.subtle.deriveKey({name:'PBKDF2',salt,iterations:CREDENTIAL_KDF_ITERATIONS,hash:'SHA-256'},material,{name:'AES-GCM',length:256},false,['encrypt','decrypt']);
+async function getBrowserCredentialKey(){
+ if(!db||!window.crypto?.subtle)throw new Error('Secure key storage needs IndexedDB and a secure browser origin (localhost or HTTPS).');
+ const stored=await dbGet('meta','credentialDeviceKey');
+ if(stored?.value&&stored.value.type==='secret')return stored.value;
+ const key=await crypto.subtle.generateKey({name:'AES-GCM',length:256},false,['encrypt','decrypt']);
+ await dbPut('meta',{key:'credentialDeviceKey',value:key});
+ const check=await dbGet('meta','credentialDeviceKey');
+ if(!check?.value||check.value.type!=='secret')throw new Error('This browser cannot persist the local encryption key.');
+ return check.value;
 }
 async function readCredentialEnvelope(){
- if(!state.vault||!state.vaultReady)return null;
- try{const raw=await readVaultFile('Settings',CREDENTIAL_FILE);const env=JSON.parse(raw);if(env?.format!=='BYOK-CREDENTIALS'||env.version!==1)throw new Error('The credential file has an unsupported format.');credentialEnvelopeCache=env;return env;}
- catch(error){if(error?.name==='NotFoundError'||/not found|could not find/i.test(error?.message||'')){credentialEnvelopeCache=null;return null;}throw error;}
-}
-function requestVaultPassphrase({create=false}={}){
- return new Promise(resolve=>{
-  openModal(`<div class="modal-head"><h2>${create?'Protect provider credentials':'Unlock provider credentials'}</h2><button class="icon-btn" id="credentialCancelTop" aria-label="Close">×</button></div><p class="modal-desc">${create?'Create a vault password. BYOK encrypts API keys with AES-GCM and a PBKDF2-derived key before writing them into the selected vault.':'Enter the vault password to decrypt the provider keys stored in this vault.'}</p><div class="form-group"><label class="form-label">${create?'New vault password':'Vault password'}</label><input class="input" id="credentialPass" type="password" autocomplete="new-password" placeholder="At least 10 characters"></div>${create?'<div class="form-group"><label class="form-label">Confirm password</label><input class="input" id="credentialPassConfirm" type="password" autocomplete="new-password" placeholder="Enter it again"></div><div class="notice warning">This password is not saved anywhere. If you lose it, the encrypted API keys cannot be recovered. Keep a secure record of it.</div>':'<div class="notice">Your password is used locally to unlock <b>Settings/credentials.enc</b>. It is never sent to an AI provider or stored in browser storage.</div>'}<div class="hint" id="credentialPassError" role="status"></div><div class="modal-actions"><button class="btn" id="credentialCancel">Cancel</button><button class="btn primary" id="credentialContinue">${create?'Create encrypted vault':'Unlock'}</button></div>`);
-  const finish=value=>{closeModal();resolve(value)};
-  $('#credentialCancel').onclick=()=>finish(null);$('#credentialCancelTop').onclick=()=>finish(null);
-  $('#credentialContinue').onclick=()=>{const pass=$('#credentialPass').value;if(pass.length<10){$('#credentialPassError').textContent='Use at least 10 characters.';return;}if(create&&pass!==$('#credentialPassConfirm').value){$('#credentialPassError').textContent='The passwords do not match.';return;}finish(pass)};
-  $('#credentialPass').addEventListener('keydown',e=>{if(e.key==='Enter')$('#credentialContinue').click()});
-  setTimeout(()=>$('#credentialPass')?.focus(),50);
- });
+ const local=await dbGet('meta','credentialEnvelope');
+ if(local?.value?.format==='BYOK-CREDENTIALS'&&local.value.version===2){credentialEnvelopeCache=local.value;return local.value;}
+ if(state.vault&&state.vaultReady){
+  try{const raw=await readVaultFile('Settings',CREDENTIAL_FILE);const env=JSON.parse(raw);if(env?.format!=='BYOK-CREDENTIALS')throw new Error('The credential file has an unsupported format.');credentialEnvelopeCache=env;return env;}
+  catch(error){if(error?.name!=='NotFoundError'&&!/not found|could not find/i.test(error?.message||''))throw error;}
+ }
+ if(local?.value){credentialEnvelopeCache=local.value;return local.value;}
+ credentialEnvelopeCache=null;return null;
 }
 async function unlockCredentialVault({createIfMissing=false}={}){
- if(!state.vault||!state.vaultReady){toast('Connect a writable vault before saving or unlocking provider credentials.','error');return false;}
  let envelope;
- try{envelope=await readCredentialEnvelope()}catch(error){toast('Could not read encrypted credentials: '+error.message,'error');return false;}
- if(!envelope){
+ try{envelope=await readCredentialEnvelope();}catch(error){toast('Could not read saved credentials: '+error.message,'error');return false;}
+ if(envelope?.version===1){
+  state.credentialsLocked=true;
+  if(!legacyCredentialNoticeShown){toast('This vault contains credentials from an older encryption format. Reconnect the provider and save its key again to migrate it without a vault password. The old file is left untouched until then.','warning');legacyCredentialNoticeShown=true;}
   if(!createIfMissing)return false;
-  const pass=await requestVaultPassphrase({create:true});if(!pass)return false;
-  const salt=crypto.getRandomValues(new Uint8Array(16));
-  try{credentialVaultKey=await deriveCredentialKey(pass,salt);state.credentialVaultSalt=salt;state.credentialsLocked=false;return true;}
-  catch(error){credentialVaultKey=null;toast('Could not initialize credential encryption: '+error.message,'error');return false;}
+  envelope=null;
  }
- if(credentialVaultKey)return true;
- for(let attempt=0;attempt<3;attempt++){
-  const pass=await requestVaultPassphrase({create:false});if(!pass)return false;
-  try{
-   const salt=base64ToBytes(envelope.kdf.salt),iv=base64ToBytes(envelope.cipher.iv);
-   const key=await deriveCredentialKey(pass,salt);
-   const plain=await crypto.subtle.decrypt({name:'AES-GCM',iv,additionalData:CREDENTIAL_AAD},key,base64ToBytes(envelope.cipher.data));
+ if(!envelope&&!createIfMissing){state.credentialsLocked=false;return false;}
+ try{
+  credentialVaultKey=await getBrowserCredentialKey();
+  if(envelope){
+   if(envelope.version!==2||envelope.keyMode!=='browser-profile')throw new Error('Unsupported credential format. Re-enter the provider key to migrate it.');
+   const iv=base64ToBytes(envelope.cipher.iv);
+   const plain=await crypto.subtle.decrypt({name:'AES-GCM',iv,additionalData:CREDENTIAL_AAD},credentialVaultKey,base64ToBytes(envelope.cipher.data));
    const parsed=JSON.parse(new TextDecoder().decode(plain));
    if(!parsed||typeof parsed!=='object'||Array.isArray(parsed))throw new Error('Invalid credential payload.');
-   state.credentials=parsed;credentialVaultKey=key;state.credentialVaultSalt=salt;state.credentialsLocked=false;
-   toast('Provider credentials unlocked from your vault.','success');return true;
-  }catch(error){toast(attempt===2?'Could not unlock credentials after three attempts. Check your vault password.':'Incorrect password or damaged credential file. Try again.','error');}
- }
- return false;
+   state.credentials=parsed;
+  }else state.credentials=state.credentials||{};
+  state.credentialsLocked=false;return true;
+ }catch(error){credentialVaultKey=null;state.credentialsLocked=!!envelope;toast('Could not unlock locally saved credentials: '+error.message,'error');return false;}
 }
 async function saveCredentialsToVault(){
- if(!state.vault||!state.vaultReady||!credentialVaultKey)throw new Error('Unlock the vault credential store before saving API keys.');
- const salt=state.credentialVaultSalt||crypto.getRandomValues(new Uint8Array(16));
+ if(!credentialVaultKey)credentialVaultKey=await getBrowserCredentialKey();
  const iv=crypto.getRandomValues(new Uint8Array(12));
  const plain=new TextEncoder().encode(JSON.stringify(state.credentials));
  const encrypted=await crypto.subtle.encrypt({name:'AES-GCM',iv,additionalData:CREDENTIAL_AAD},credentialVaultKey,plain);
- const envelope={format:'BYOK-CREDENTIALS',version:1,kdf:{name:'PBKDF2',hash:'SHA-256',iterations:CREDENTIAL_KDF_ITERATIONS,salt:bytesToBase64(salt)},cipher:{name:'AES-GCM',iv:bytesToBase64(iv),data:bytesToBase64(new Uint8Array(encrypted))},updatedAt:new Date().toISOString()};
- await writeVaultFile('Settings',CREDENTIAL_FILE,JSON.stringify(envelope,null,2));credentialEnvelopeCache=envelope;state.credentialVaultSalt=salt;state.credentialsLocked=false;
+ const envelope={format:'BYOK-CREDENTIALS',version:2,keyMode:'browser-profile',cipher:{name:'AES-GCM',iv:bytesToBase64(iv),data:bytesToBase64(new Uint8Array(encrypted))},updatedAt:new Date().toISOString()};
+ await dbPut('meta',{key:'credentialEnvelope',value:envelope});
+ if(state.vault&&state.vaultReady){await writeVaultFile('Settings',CREDENTIAL_FILE,JSON.stringify(envelope,null,2));}
+ credentialEnvelopeCache=envelope;state.credentialsLocked=false;
 }
-async function vaultHasSavedCredentials(){try{return !!(await readCredentialEnvelope())}catch(error){console.warn('Credential envelope could not be inspected:',error);return true}}
+async function vaultHasSavedCredentials(){try{return !!(await readCredentialEnvelope());}catch(error){console.warn('Credential envelope could not be inspected:',error);return true}}
 async function saveVaultFolders(){
  const folders=[...new Set(state.folders.map(f=>safeVaultSegments(f).join('/')).filter(Boolean))];
  state.folders=folders;
@@ -1014,12 +1108,11 @@ async function loadVaultSettings(){
  try{credentialEnvelopeCache=await readCredentialEnvelope();state.credentialsLocked=!!credentialEnvelopeCache;}catch(error){console.warn('Could not inspect saved credentials:',error);state.credentialsLocked=true;}
  try{const raw=await readVaultFile('Settings','models-'+state.provider+'.json'),v=JSON.parse(raw);if(v.provider===state.provider&&Array.isArray(v.models))state.models=v.models;}catch(error){if(error?.name!=='NotFoundError'&&!/not found|could not find/i.test(error?.message||''))console.warn('Could not load saved model catalogue:',error);}
 }
-async function lockCredentials(){state.abort?.abort();state.credentials={};credentialVaultKey=null;state.credentialVaultSalt=null;state.credentialsLocked=await vaultHasSavedCredentials();toast(state.credentialsLocked?'Provider keys locked. They remain encrypted in your vault.':'In-memory provider keys cleared.','success');if(state.view==='settings')renderView();}
+async function lockCredentials(){state.abort?.abort();state.credentials={};credentialVaultKey=null;state.credentialsLocked=await vaultHasSavedCredentials();toast(state.credentialsLocked?'Provider keys hidden for this session. They will unlock automatically in this browser.':'In-memory provider keys cleared.','success');if(state.view==='settings')renderView();}
 async function saveConfig(){
- if(!state.vault||!state.vaultReady)throw new Error('Connect a writable vault before saving provider or model settings.');
  const payload={version:1,provider:state.provider,model:state.model,configs:state.configs,updatedAt:new Date().toISOString()};
- await writeVaultFile('Settings',APP_SETTINGS_FILE,JSON.stringify(payload,null,2));
- try{await dbPut('meta',{key:'config',value:payload})}catch(error){console.warn('Settings cache update failed:',error)}
+ await dbPut('meta',{key:'config',value:payload});
+ if(state.vault&&state.vaultReady)await writeVaultFile('Settings',APP_SETTINGS_FILE,JSON.stringify(payload,null,2));
 }
 function active(){return state.chats.find(c=>c.id===state.activeId)}
 function syncNavigation(view=state.view){const target=view==='chat'?'chats':view;$$('.nav-btn').forEach(b=>b.classList.toggle('active',b.dataset.view===target));$$('#mobileNav button').forEach(b=>b.classList.toggle('active',b.dataset.view===target));}
@@ -1035,7 +1128,8 @@ function restoreNavigation(snapshot){
  state.activeId=snapshot.activeId||null;setView(snapshot.view||'chats',{push:false});
 }
 function setView(view,{push=true}={}){
- resetReaderChrome();
+ if(view==='settings'&&state.view!=='settings')state.settingsReturnView=state.view==='chat'?(active()?.kind==='note'?'notes':'chats'):state.view;
+ resetReaderChrome();const app=$('.app');if(app)app.classList.remove('document-open');
  const nextFolder=view==='vault'?state.folder:'';
  if(push)pushScreenState({view,activeId:state.activeId,folder:nextFolder,filter:state.filter});
  state.view=view;state.folder=nextFolder;
@@ -1043,8 +1137,62 @@ function setView(view,{push=true}={}){
  $('#topTitle').textContent=({chats:'All chats',notes:'Notes',favorites:'Favorites',vault:'Workspace files',trash:'Trash',models:'Models & providers',settings:'Settings'})[view]||'BYOK';
  closeSidebar();$('#mainScroll').scrollTop=0;renderView();playFeedback('tab');
 }
-function openChat(id,{push=true}={}){const record=state.chats.find(x=>x.id===id);if(!record||record.deleted)return;resetReaderChrome();if(push)pushScreenState({view:'chat',activeId:id,folder:state.folder,filter:state.filter});state.activeId=id;if(record?.provider){state.provider=record.provider;state.model=record.model||'';state.models=[];}state.view='chat';$('#topTitle').textContent=record?.kind==='note'?'Notes':'Chats';syncNavigation(record?.kind==='note'?'notes':'chat');closeSidebar();$('#mainScroll').scrollTop=0;$$('.view').forEach(v=>v.classList.remove('active'));const host=$('#view-chat');host.classList.add('active');const c=active();playFeedback('tab');if(c?.kind==='note'){host.innerHTML=`<div class="chat-wrap"><div class="chat-head"><div class="chat-name" id="chatTitle">${esc(c.title)}</div><div class="chat-meta"><span class="statusline" id="saveStatus">Saved</span><span class="pill">▤ Markdown note</span><button class="icon-btn" id="chatMore">⋯</button></div></div><div style="display:flex;gap:8px;align-items:center;margin-bottom:10px"><span class="statusline">Markdown source</span><span style="margin-left:auto"></span><button class="btn" id="notePreviewToggle">Preview</button><button class="btn primary" id="saveNote">Save</button></div><textarea id="noteEditor" class="textarea" spellcheck="true" style="flex:1;min-height:180px;resize:none;font-size:16px;line-height:1.75;padding:17px;background:#111a2d" placeholder="Start writing in Markdown…">${esc(c.noteContent||'')}</textarea><div id="notePreview" class="card md hidden" style="flex:1;overflow:auto;margin-top:8px"></div><div class="composer-hint">Saved as a Markdown document in ${esc(c.folder||'Notes')}</div></div>`;const editor=$('#noteEditor');let timer;editor.oninput=()=>{c.noteContent=editor.value;$('#saveStatus').textContent='Unsaved';clearTimeout(timer);timer=setTimeout(async()=>{$('#saveStatus').textContent=await persist(c)?'Saved':'Save failed'},550)};$('#saveNote').onclick=async()=>{c.noteContent=editor.value;const ok=await persist(c);$('#saveStatus').textContent=ok?'Saved':'Save failed';if(ok)toast('Note saved','success')};$('#notePreviewToggle').onclick=()=>{const pre=$('#notePreview'),editing=!pre.classList.contains('hidden');if(editing){pre.classList.add('hidden');editor.classList.remove('hidden');$('#notePreviewToggle').textContent='Preview'}else{pre.innerHTML=renderMarkdown(editor.value);enhanceMarkdown(pre);pre.classList.remove('hidden');editor.classList.add('hidden');$('#notePreviewToggle').textContent='Edit'}};$('#chatMore').onclick=()=>recordMenu(c);return;}
- host.innerHTML=`<div class="chat-wrap" id="chatView"><button class="reader-restore" id="readerRestore" type="button" aria-label="Show hidden navigation and controls">↑ Show controls</button><div class="chat-head chat-conversation"><div class="chat-name" id="chatTitle">Conversation</div><div class="chat-meta"><span class="statusline" id="saveStatus">Saved</span><button class="btn" id="activeModelBtn">✧ <span id="activeModelLabel">Choose model</span></button><button class="icon-btn" id="chatMore">⋯</button></div></div><div class="messages" id="messages"></div><div class="composer-area"><div class="attachment-strip" id="attachmentStrip"></div><div class="composer"><textarea id="composerInput" rows="1" placeholder="Message BYOK…"></textarea><div class="composer-bottom"><div class="composer-left"><button class="icon-btn" id="attachBtn" title="Attach files">＋</button><span class="statusline" id="providerHint">Connect an AI provider to start</span></div><div class="composer-right"><button class="icon-btn" id="promptSettings" title="Generation settings">☷</button><button class="send" id="sendBtn" title="Send">➤</button></div></div></div><div class="composer-hint">Enter to send · Shift+Enter for a new line · Requests go directly to your selected provider</div></div></div>`;bindChat();renderChat();}
+function openChat(id,{push=true}={}){
+ const record=state.chats.find(x=>x.id===id);if(!record||record.deleted)return;
+ resetReaderChrome();const app=$('.app');app?.classList.add('document-open');state.noteEditing=false;
+ if(push)pushScreenState({view:'chat',activeId:id,folder:state.folder,filter:state.filter});
+ state.activeId=id;
+ if(record.provider){state.provider=record.provider;state.model=record.model||'';state.models=[];}
+ state.view='chat';$('#topTitle').textContent=record.kind==='note'?'Notes':(record.title||'Chat');syncNavigation(record.kind==='note'?'notes':'chat');closeSidebar();$('#mainScroll').scrollTop=0;
+ $$('.view').forEach(v=>v.classList.remove('active'));const host=$('#view-chat');host.classList.add('active');playFeedback('tab');
+ if(record.kind==='note'){renderNoteDocument(record,uiPrefs.defaultNoteView==='edit');return;}
+ host.innerHTML=`<div class="chat-wrap reader-wrap" id="chatView">
+  <button class="reader-restore" id="readerRestore" type="button" aria-label="Show hidden controls"><i data-lucide="panel-top-open"></i><span>Show controls</span></button>
+  <div class="reader-topbar" id="readerTopbar"><button class="reader-icon" id="readerSidebarToggle" aria-label="Open files"><i data-lucide="panel-left"></i></button><div class="reader-title-block"><b id="chatTitle">${esc(record.title)}</b><small id="readerSubline">${esc(record.provider?((PROVIDERS[record.provider]?.name||'AI')+' · '+(record.model||'Choose model')):'Your private conversation')}</small></div><div class="reader-actions"><button class="reader-model" id="activeModelBtn"><i data-lucide="sparkles"></i><span id="activeModelLabel">${esc(record.model||state.model||'Choose model')}</span></button><button class="reader-icon" id="chatMore" aria-label="More options"><i data-lucide="more-vertical"></i></button></div></div>
+  <div class="messages" id="messages" aria-label="Conversation"></div>
+  <div class="reader-dock" id="readerDock"><button id="readerBack" aria-label="Back"><i data-lucide="arrow-left"></i></button><button id="readerSearch" aria-label="Search conversation"><i data-lucide="search"></i></button><button id="readerNew" aria-label="New chat"><i data-lucide="plus"></i></button><button id="readerLatest" aria-label="Jump to latest"><i data-lucide="arrow-down-to-line"></i></button></div>
+  <div class="composer-area"><div class="attachment-strip" id="attachmentStrip"></div><div class="composer"><textarea id="composerInput" rows="1" placeholder="Message BYOK…"></textarea><div class="composer-bottom"><div class="composer-left"><button class="icon-btn" id="attachBtn" title="Attach files"><i data-lucide="paperclip"></i></button><span class="statusline" id="providerHint">Connect an AI provider to start</span></div><div class="composer-right"><button class="send" id="sendBtn" title="Send"><i data-lucide="arrow-up"></i></button></div></div></div><div class="composer-hint">Enter to send · Shift+Enter for a new line</div></div>
+ </div>`;
+ renderIcons(host);bindChat();renderChat();
+ $('#readerSidebarToggle').onclick=()=>{const side=$('#sidebar');side.classList.add('open');$('#scrim').classList.add('show');$('#menuBtn')?.setAttribute('aria-expanded','true');playFeedback('modal');};
+ $('#readerBack').onclick=()=>{if(history.state?.byokScreen)history.back();else setView('chats')};
+ $('#readerSearch').onclick=()=>searchCurrentDocument(record);
+ $('#readerNew').onclick=()=>createChat();
+ $('#readerLatest').onclick=()=>{const m=$('#messages');m?.scrollTo({top:m.scrollHeight,behavior:'smooth'});setReaderChromeHidden(false)};
+}
+function renderNoteDocument(c,editing=false){
+ const host=$('#view-chat');if(!host)return;state.noteEditing=editing;
+ host.innerHTML=`<div class="chat-wrap reader-wrap note-reader-wrap" id="noteReader">
+  <button class="reader-restore" id="readerRestore" type="button" aria-label="Show hidden controls"><i data-lucide="panel-top-open"></i><span>Show controls</span></button>
+  <div class="reader-topbar" id="readerTopbar"><button class="reader-icon" id="readerSidebarToggle" aria-label="Open files"><i data-lucide="panel-left"></i></button><div class="reader-title-block"><b id="chatTitle">${esc(c.title)}</b><small><span id="saveStatus">Saved</span> · Markdown note · ${esc(c.folder||'Notes')}</small></div><div class="reader-actions"><button class="reader-icon" id="noteEditTop" aria-label="Toggle note editing"><i data-lucide="${editing?'book-open':'pencil'}"></i></button><button class="reader-icon" id="chatMore" aria-label="More options"><i data-lucide="more-vertical"></i></button></div></div>
+  <div class="note-body-scroll" id="noteContentScroll">${editing?`<textarea id="noteEditor" class="note-editor" spellcheck="${uiPrefs.spellcheck?'true':'false'}" placeholder="Start writing in Markdown…">${esc(c.noteContent||'')}</textarea>`:`<article class="md note-document">${renderMarkdown(c.noteContent||'')}</article>`}</div>
+  <div class="reader-dock note-dock" id="readerDock"><button id="readerBack" aria-label="Back"><i data-lucide="arrow-left"></i></button><button id="notePreviewSearch" aria-label="Find in note"><i data-lucide="search"></i></button><button id="noteEdit" aria-label="${editing?'Save note':'Edit note'}"><i data-lucide="${editing?'check':'pencil'}"></i></button><button id="noteExport" aria-label="Export Markdown"><i data-lucide="download"></i></button></div>
+ </div>`;
+ renderIcons(host);enhanceMarkdown($('#noteContentScroll'));
+ $('#readerSidebarToggle').onclick=()=>{$('#sidebar').classList.add('open');$('#scrim').classList.add('show');$('#menuBtn')?.setAttribute('aria-expanded','true');playFeedback('modal')};
+ $('#readerBack').onclick=()=>{if(history.state?.byokScreen)history.back();else setView('notes')};
+ $('#chatMore').onclick=()=>recordMenu(c);
+ const toggleNoteMode=async()=>{
+  if(state.noteEditing){
+   const editor=$('#noteEditor');if(editor)c.noteContent=editor.value;
+   const ok=await persist(c);if(!ok){toast('Note could not be saved.','error');return;}
+   renderNoteDocument(c,false);toast('Note saved','success');
+  }else renderNoteDocument(c,true);
+ };
+ $('#noteEditTop').onclick=toggleNoteMode;
+ $('#noteEdit').onclick=toggleNoteMode;
+ $('#noteExport').onclick=()=>downloadMarkdown(c);
+ $('#notePreviewSearch').onclick=()=>searchCurrentDocument(c);
+ if(editing){const editor=$('#noteEditor');let timer=null;editor?.addEventListener('input',()=>{c.noteContent=editor.value;const status=$('#saveStatus');if(status)status.textContent='Unsaved';clearTimeout(timer);timer=setTimeout(async()=>{if(uiPrefs.autoSave){const ok=await persist(c);if($('#saveStatus'))$('#saveStatus').textContent=ok?'Saved':'Save failed';}},650);});}
+ const scrollBox=$('#noteContentScroll');if(scrollBox)initChatReaderChrome(scrollBox);
+}
+function searchCurrentDocument(record){
+ const initial=record.kind==='chat'?'':(record.noteContent||'');
+ openModal(`<div class="modal-head"><h2>Find in ${record.kind==='note'?'note':'conversation'}</h2><button class="icon-btn" data-close aria-label="Close">×</button></div><input class="input" id="docSearchInput" placeholder="Search text…" autocomplete="off"><div id="docSearchResults" class="doc-search-results"></div>`);
+ const input=$('#docSearchInput'),results=$('#docSearchResults');
+ const run=()=>{const q=input.value.trim().toLowerCase();if(!q){results.innerHTML='<p class="hint">Type to search this document.</p>';return;}const lines=(record.kind==='note'?initial:(record.messages||[]).map(m=>m.content).join('\n\n')).split(/\n/);;const matches=[];lines.forEach((line,i)=>{if(line.toLowerCase().includes(q))matches.push({line,i})});results.innerHTML=matches.length?matches.slice(0,40).map(x=>`<button class="search-hit" data-line="${x.i}"><small>Line ${x.i+1}</small><span>${esc(x.line.slice(0,240))}</span></button>`).join(''):'<p class="hint">No matches found.</p>';};
+ input.oninput=run;run();input.focus();
+}
 function resetReaderChrome(){const app=$('.app');if(app)app.classList.remove('reader-mode','reader-chrome-hidden');const area=$('.composer-area');if(area){area.classList.remove('is-compact');area.setAttribute('aria-expanded','true');}}
 function setComposerCompact(compact){
  const area=$('.composer-area');if(!area)return;
@@ -1056,10 +1204,10 @@ function setComposerCompact(compact){
  if(!compact)resizeComposer();
 }
 function setReaderChromeHidden(hidden){
- const app=$('.app');if(!app)return;
+ const app=$('.app');if(!app)return;if(!uiPrefs.readerAutoHide)hidden=false;
  app.classList.add('reader-mode');
  app.classList.toggle('reader-chrome-hidden',!!hidden);
- setComposerCompact(!!hidden);
+ setComposerCompact(!!hidden&&uiPrefs.compactComposer);
  const restore=$('#readerRestore');
  if(restore)restore.setAttribute('aria-hidden',hidden?'false':'true');
 }
@@ -1168,19 +1316,34 @@ function bindChat(){
  $('#attachBtn').onclick=()=>$('#filePicker').click();
  $('#filePicker').onchange=async e=>{await handleFiles([...e.target.files]);e.target.value=''};
  $('#activeModelBtn').onclick=()=>currentCredential()?openModelPicker():openProviderModal();
- $('#chatMore').onclick=()=>chatMenu();$('#promptSettings').onclick=()=>generationSettings();
+ $('#chatMore').onclick=()=>chatMenu();
 }
 function resizeComposer(){const e=$('#composerInput');if(e){e.style.height='auto';e.style.height=Math.min(e.scrollHeight,170)+'px'}}
-async function createChat(){const preferred=state.folder||'Chats';const c=newRecord('chat',preferred);if(!await persist(c))return;state.chats.unshift(c);state.activeId=c.id;openChat(c.id)}
-async function createNote(){if(!state.vault||!state.vaultReady){toast('Choose a writable vault before creating notes.','warning');pickVault();return;}const preferred=state.folder||'Notes';const c=newRecord('note',preferred);c.title='Untitled note';c.noteContent='';if(!await persist(c))return;state.chats.unshift(c);state.activeId=c.id;openChat(c.id)}
+async function createChat(){const preferred=state.folder||'Chats';expandFolderPath(preferred);const c=newRecord('chat',preferred);if(!await persist(c))return;state.chats.unshift(c);state.activeId=c.id;renderAll();openChat(c.id)}
+async function createNote(){if(!state.vault||!state.vaultReady){toast('Choose a writable vault before creating notes.','warning');pickVault();return;}const preferred=state.folder||'Notes';expandFolderPath(preferred);const c=newRecord('note',preferred);c.title='Untitled note';c.noteContent='';if(!await persist(c))return;state.chats.unshift(c);state.activeId=c.id;renderAll();openChat(c.id)}
 async function renameRecord(c){const v=prompt('New name',c.title);if(!v?.trim())return;const old=c._fileName,oldFolder=c._fileFolder??(c.deleted?'.trash':c.folder);const previousTitle=c.title;c.title=v.trim();if(!await persist(c)){c.title=previousTitle;await dbPut('chats',c);return}if(state.vault&&old&&old!==c._fileName){try{await removeVaultFile(oldFolder,old)}catch{}}toast('Renamed');renderAll();if(state.activeId===c.id)renderChat()}
 async function moveRecord(c){const choices=state.folders.filter(x=>x!=='.trash');const v=prompt('Move to folder:\n'+choices.join(', '),c.folder||'Chats');if(!v)return;if(!choices.includes(v.trim())){toast('That folder is not in the current folder list. Create it first.','error');return}const old=c._fileName,oldFolder=c._fileFolder??c.folder,previousFolder=c.folder;c.folder=v.trim();if(!await persist(c)){c.folder=previousFolder;await dbPut('chats',c);return}if(state.vault&&old&&(old!==c._fileName||oldFolder!==c._fileFolder)){try{await removeVaultFile(oldFolder,old)}catch{}}renderAll();toast('Moved to '+c.folder,'success')}
 async function deleteRecord(c){if(!confirm(`Move “${c.title}” to Trash?`))return;const old=c._fileName,oldFolder=c._fileFolder??c.folder;c.deleted=true;if(!await persist(c)){c.deleted=false;await dbPut('chats',c);return}if(state.vault&&old&&(old!==c._fileName||oldFolder!==c._fileFolder)){try{await removeVaultFile(oldFolder,old)}catch{}}if(state.activeId===c.id){state.activeId=null;setView('chats')}renderAll();toast('Moved to Trash')}
 async function restoreRecord(c){const old=c._fileName,oldFileFolder=c._fileFolder??'.trash',previousFolder=c.folder,previousDeleted=c.deleted;c.deleted=false;c.folder=c.kind==='note'?'Notes':'Chats';if(!await persist(c)){c.deleted=previousDeleted;c.folder=previousFolder;await dbPut('chats',c);return}if(state.vault&&old&&(old!==c._fileName||oldFileFolder!==c._fileFolder)){try{await removeVaultFile(oldFileFolder,old)}catch{}}renderAll();toast('Restored','success')}
 async function duplicateRecord(c){const d=structuredClone(c);d.id=uid();d.title=c.title+' (copy)';d.createdAt=new Date().toISOString();d.updatedAt=d.createdAt;d.deleted=false;if(!await persist(d))return;state.chats.unshift(d);renderAll();toast('Duplicated','success')}
-function recordMenu(c){openModal(`<div class="modal-head"><h2>${esc(c.title)}</h2><button class="icon-btn" data-close>×</button></div><p class="modal-desc">Document actions</p><div class="model-list"><button class="btn" data-act="rename">✎ Rename</button><button class="btn" data-act="move">↗ Move to folder</button><button class="btn" data-act="duplicate">▢ Duplicate</button><button class="btn" data-act="favorite">${c.favorite?'★ Remove favorite':'☆ Add to favorites'}</button><button class="btn" data-act="export">↓ Export Markdown</button><button class="btn danger" data-act="delete">⌫ Move to Trash</button></div>`);$$('[data-act]').forEach(b=>b.onclick=async()=>{closeModal();({rename:()=>renameRecord(c),move:()=>moveRecord(c),duplicate:()=>duplicateRecord(c),favorite:async()=>{const previous=c.favorite;c.favorite=!c.favorite;if(!await persist(c)){c.favorite=previous;return;}renderAll()},export:()=>downloadMarkdown(c),delete:()=>deleteRecord(c)})[b.dataset.act]?.()})}
+function recordMenu(c){
+ const isChat=c.kind==='chat';
+ const special=isChat
+  ? `<button class="btn" data-act="model"><i data-lucide="sparkles"></i> Choose model</button><button class="btn" data-act="instructions"><i data-lucide="sliders-horizontal"></i> Conversation instructions</button>`
+  : `<button class="btn" data-act="edit"><i data-lucide="pencil"></i> ${state.noteEditing?'Save and preview':'Edit note'}</button>`;
+ openModal(`<div class="modal-head"><h2>${esc(c.title)}</h2><button class="icon-btn" data-close>×</button></div><p class="modal-desc">${isChat?'Conversation options':'Note options'}</p><div class="model-list">${special}<button class="btn" data-act="rename"><i data-lucide="pencil-line"></i> Rename</button><button class="btn" data-act="move"><i data-lucide="folder-input"></i> Move to folder</button><button class="btn" data-act="duplicate"><i data-lucide="copy"></i> Duplicate</button><button class="btn" data-act="favorite"><i data-lucide="star"></i> ${c.favorite?'Remove favorite':'Add to favorites'}</button><button class="btn" data-act="export"><i data-lucide="download"></i> Export Markdown</button><button class="btn" data-act="settings"><i data-lucide="settings"></i> App settings</button><button class="btn danger" data-act="delete"><i data-lucide="trash-2"></i> Move to Trash</button></div>`);
+ $$('[data-act]').forEach(b=>b.onclick=async()=>{
+  const action=b.dataset.act;closeModal();
+  if(action==='model'){if(state.activeId!==c.id)openChat(c.id);openModelPicker();return;}
+  if(action==='instructions'){if(state.activeId!==c.id)openChat(c.id);generationSettings(c);return;}
+  if(action==='edit'){if(state.activeId!==c.id)openChat(c.id);if(state.noteEditing){const editor=$('#noteEditor');if(editor)c.noteContent=editor.value;const ok=await persist(c);if(ok){renderNoteDocument(c,false);toast('Note saved','success')}else toast('Note could not be saved.','error')}else renderNoteDocument(c,true);return;}
+  if(action==='settings'){if(state.activeId!==c.id)openChat(c.id);setView('settings');return;}
+  const actions={rename:()=>renameRecord(c),move:()=>moveRecord(c),duplicate:()=>duplicateRecord(c),favorite:async()=>{const previous=c.favorite;c.favorite=!c.favorite;if(!await persist(c)){c.favorite=previous;return;}renderAll()},export:()=>downloadMarkdown(c),delete:()=>deleteRecord(c)};
+  await actions[action]?.();
+ });
+}
 function chatMenu(){const c=active();if(c)recordMenu(c)}
-function openModal(html){$('#modal').innerHTML=html;$('#modalBackdrop').classList.add('open');playFeedback('modal');$$('[data-close]').forEach(b=>b.onclick=closeModal);$('#modalBackdrop').onclick=e=>{if(e.target===$('#modalBackdrop'))closeModal()}}
+function openModal(html){$('#modal').innerHTML=html;renderIcons($('#modal'));$('#modalBackdrop').classList.add('open');playFeedback('modal');$$('[data-close]').forEach(b=>b.onclick=closeModal);$('#modalBackdrop').onclick=e=>{if(e.target===$('#modalBackdrop'))closeModal()}}
 function closeModal(){$('#modalBackdrop').classList.remove('open')}
 function download(name,content,type='text/markdown'){const blob=new Blob([content],{type});const url=URL.createObjectURL(blob);const a=document.createElement('a');a.href=url;a.download=name;a.click();setTimeout(()=>URL.revokeObjectURL(url),1500)}
 function downloadMarkdown(c){download(slug(c.title)+'.md',serialize(c));toast('Markdown exported','success')}
@@ -1297,7 +1460,7 @@ async function importVaultZip(file){
   }
   state.models=[];await loadVaultSettings();await saveVaultFolders();await saveConfig();
   credentialVaultKey=null;state.credentials={};state.credentialVaultSalt=null;
-  renderAll();toast(`Vault imported: ${imported} documents, ${otherFiles} settings/assets${skipped?' · '+skipped+' skipped':''}. Encrypted credentials require your vault password.`,'success');
+  renderAll();toast(`Vault imported: ${imported} documents, ${otherFiles} settings/assets${skipped?' · '+skipped+' skipped':''}. Older credentials from another encryption format were not imported; reconnect that provider to save a new browser-managed key.`,'success');
  }catch(error){toast('Could not read this ZIP archive: '+error.message,'error');}
 }
 async function copyText(t){try{await navigator.clipboard.writeText(t);toast('Copied','success')}catch{toast('Clipboard permission was blocked.','error')}}
@@ -1346,41 +1509,40 @@ async function geminiStream({base,model,credential,messages,system,signal,onDelt
 async function readSSE(response,onData){const reader=response.body.getReader(),decoder=new TextDecoder();let buffer='';while(true){const {value,done}=await reader.read();if(done)break;buffer+=decoder.decode(value,{stream:true});let lines=buffer.split('\n');buffer=lines.pop()||'';for(const line of lines){const s=line.trim();if(s.startsWith('data:')){const data=s.slice(5).trim();if(data){try{onData(data)}catch(e){if(data!=='[DONE]')console.warn('Could not parse stream event',e)}}}}}if(buffer.trim().startsWith('data:')){try{onData(buffer.trim().slice(5).trim())}catch{}}}
 async function responseError(r){let t='';try{const copy=r.clone();try{const j=await copy.json();t=j.error?.message||j.message||JSON.stringify(j).slice(0,500)}catch{t=(await r.text()).slice(0,500)}}catch{}return `Provider error (${r.status}): ${t||r.statusText}`}
 async function openProviderModal(){
- if(!state.vault||!state.vaultReady){toast('Connect a vault to save provider credentials securely. Your chats already save in this browser.','warning');pickVault();return;}
- const hasSaved=await vaultHasSavedCredentials();
- if(!credentialVaultKey){const unlocked=await unlockCredentialVault({createIfMissing:!hasSaved});if(!unlocked)return;}
+ const ready=await unlockCredentialVault({createIfMissing:true});if(!ready){toast('Secure browser storage is unavailable. Open BYOK on localhost or HTTPS.','error');return;}
  const p=state.provider,cfg=providerConfig(p);
- openModal(`<div class="modal-head"><h2>Connect an AI provider</h2><button class="icon-btn" data-close>×</button></div><p class="modal-desc">Add your own API key. Requests go directly to the provider. API keys are encrypted with your vault password and saved inside <b>${esc(state.vaultName||'your selected vault')}/Settings/credentials.enc</b>.</p><div class="form-group"><label class="form-label">Provider</label><select class="select" id="providerSelect">${Object.entries(PROVIDERS).map(([id,x])=>`<option value="${id}" ${id===p?'selected':''}>${x.icon} ${x.name}</option>`).join('')}</select></div><div class="form-group" id="baseGroup"><label class="form-label">API base URL</label><input class="input" id="providerBase" value="${esc(cfg.base||'')}" placeholder="https://your-provider.example/v1"/><div class="hint">For OpenAI-compatible services. Use HTTPS unless this is a trusted local endpoint.</div></div><div class="form-group"><label class="form-label">API key</label><div style="display:flex;gap:7px"><input class="input" id="providerKey" type="password" autocomplete="off" placeholder="Paste a key, or leave blank to keep the saved key" style="flex:1"/><button class="btn" id="toggleKey">Show</button></div></div><div class="hint" id="providerDocs"></div><div class="notice">Credentials are encrypted locally using AES-256-GCM. The vault password is never stored. You will need it again when reopening BYOK in a new browser session. Export the vault ZIP to back up the encrypted credential file.</div><div id="providerMsg" class="hint"></div><div class="modal-actions"><button class="btn" data-close>Cancel</button><button class="btn primary" id="saveProvider">Encrypt, save & fetch models</button></div>`);
+ const storeLabel=state.vault&&state.vaultReady?`this browser and ${esc(state.vaultName||'your selected vault')}`:'this browser profile';
+ openModal(`<div class="modal-head"><h2>Connect an AI provider</h2><button class="icon-btn" data-close aria-label="Close">×</button></div><p class="modal-desc">Add your own API key. Requests go directly to the provider. Keys are encrypted automatically and saved in ${storeLabel}. No vault password is required.</p><div class="form-group"><label class="form-label">Provider</label><select class="select" id="providerSelect">${Object.entries(PROVIDERS).map(([id,x])=>`<option value="${id}" ${id===p?'selected':''}>${x.icon} ${x.name}</option>`).join('')}</select></div><div class="form-group" id="baseGroup"><label class="form-label">API base URL</label><input class="input" id="providerBase" value="${esc(cfg.base||'')}" placeholder="https://your-provider.example/v1"/><div class="hint">For OpenAI-compatible services. Use HTTPS unless this is a trusted local endpoint.</div></div><div class="form-group"><label class="form-label">API key</label><div style="display:flex;gap:7px"><input class="input" id="providerKey" type="password" autocomplete="off" placeholder="Paste a key, or leave blank to keep the saved key" style="flex:1"/><button class="btn" id="toggleKey">Show</button></div></div><div class="hint" id="providerDocs"></div><div class="notice">Your key is encrypted automatically with AES-256-GCM. The encryption key is kept by this browser profile in IndexedDB. No password is requested. To use the same credentials in another browser or device, reconnect the provider there.</div><div id="providerMsg" class="hint"></div><div class="modal-actions"><button class="btn" data-close>Cancel</button><button class="btn primary" id="saveProvider">Save & fetch models</button></div>`);
  const sel=$('#providerSelect');
- const update=()=>{const id=sel.value,d=PROVIDERS[id];$('#providerBase').value=state.configs[id]?.base||d.base;$('#baseGroup').classList.toggle('hidden',id!=='custom');$('#providerDocs').innerHTML=d.docs?`API key page: <a href="${d.docs}" target="_blank" rel="noopener" style="color:#a992ff">Open ${d.name} console ↗</a>`:'Enter your custom OpenAI-compatible API base URL.'};
+ const update=()=>{const id=sel.value,d=PROVIDERS[id];$('#providerBase').value=state.configs[id]?.base||d.base;$('#baseGroup').classList.toggle('hidden',id!=='custom');$('#providerDocs').innerHTML=d.docs?`API key page: <a href="${d.docs}" target="_blank" rel="noopener" style="color:#b7a5e8">Open ${d.name} console ↗</a>`:'Enter your custom OpenAI-compatible API base URL.'};
  sel.onchange=update;update();
  $('#toggleKey').onclick=()=>{const f=$('#providerKey');f.type=f.type==='password'?'text':'password';$('#toggleKey').textContent=f.type==='password'?'Show':'Hide'};
  $('#saveProvider').onclick=async()=>{
   const id=sel.value,typedKey=$('#providerKey').value.trim(),key=typedKey||state.credentials[id]?.key||'',base=$('#providerBase').value.trim();
   if(!key){toast('Paste an API key first.','error');return;}
   if(id==='custom'&&!/^https:\/\//i.test(base)&&!/^http:\/\/localhost(?::\d+)?/i.test(base)){toast('Enter a valid HTTPS base URL (or localhost).','error');return;}
-  const button=$('#saveProvider');button.disabled=true;button.textContent='Encrypting…';
+  const button=$('#saveProvider');button.disabled=true;button.textContent='Saving securely…';
   try{
-   if(!credentialVaultKey)throw new Error('Credential vault is locked. Close this dialog and unlock it again.');
    if(state.provider!==id){state.model='';state.models=[];}
    state.provider=id;state.credentials[id]={key};state.configs[id]={base:base||PROVIDERS[id].base};
    await saveCredentialsToVault();await saveConfig();
-   $('#providerMsg').textContent='Encrypted credentials saved to the selected vault. Fetching models…';
-   try{await fetchModels(id);$('#providerMsg').textContent=`Saved securely. ${state.models.length} eligible models found.`;closeModal();if(state.models.length)openModelPicker();renderAll();toast('Provider connected and credentials saved in your vault.','success');}
-   catch(e){$('#providerMsg').textContent='Credentials were saved, but model discovery failed: '+e.message;toast('Credentials saved. Model discovery failed: '+e.message,'error');button.disabled=false;button.textContent='Retry model discovery';button.onclick=async()=>{try{await fetchModels(id);closeModal();renderAll();toast('Models loaded','success')}catch(err){$('#providerMsg').textContent=err.message}};}
-  }catch(e){toast('Could not save encrypted credentials: '+e.message,'error');button.disabled=false;button.textContent='Retry secure save';}
+   $('#providerMsg').textContent='Key encrypted and saved. Fetching models…';
+   try{await fetchModels(id);$('#providerMsg').textContent=`Saved. ${state.models.length} eligible models found.`;closeModal();if(state.models.length)openModelPicker();renderAll();toast('Provider connected and key saved securely.','success');}
+   catch(e){$('#providerMsg').textContent='Key saved, but model discovery failed: '+e.message;toast('Key saved. Model discovery failed: '+e.message,'error');button.disabled=false;button.textContent='Retry model discovery';}
+  }catch(e){toast('Could not save provider settings: '+e.message,'error');button.disabled=false;button.textContent='Save & fetch models';}
  };
 }
+
 async function fetchModels(provider=state.provider){const key=state.credentials[provider]?.key;if(!key)throw new Error('Add the API key for this provider first.');const cfg=providerConfig(provider),base=(cfg.base||'').replace(/\/$/,'');let models=[];
  if(provider==='gemini'){const r=await fetch(base+'/models?pageSize=1000',{headers:{'x-goog-api-key':key}});if(!r.ok)throw new Error(await responseError(r));const j=await r.json();models=(j.models||[]).filter(m=>(m.supportedGenerationMethods||[]).includes('generateContent')&&!/embedding|aqa|imagen|image|veo|tts|audio/i.test(m.name+' '+m.displayName)).map(m=>({id:m.name.replace(/^models\//,''),name:m.displayName||m.name,detail:'Gemini · generateContent'}));}
  else if(provider==='anthropic'){const r=await fetch(base+'/models?limit=1000',{headers:{'x-api-key':key,'anthropic-version':'2023-06-01','anthropic-dangerous-direct-browser-access':'true'}});if(!r.ok)throw new Error(await responseError(r));const j=await r.json();models=(j.data||[]).map(m=>({id:m.id,name:m.display_name||m.id,detail:'Claude · Messages API'}));}
  else if(provider==='openrouter'){const r=await fetch(base+'/models',{headers:{'Authorization':'Bearer '+key}});if(!r.ok)throw new Error(await responseError(r));const j=await r.json();models=(j.data||[]).filter(m=>{const i=m.architecture?.input_modalities||[],o=m.architecture?.output_modalities||[];return i.includes('text')&&o.includes('text')}).map(m=>({id:m.id,name:m.name||m.id,detail:'Text input + text output'}));}
  else {const r=await fetch(base+'/models',{headers:{'Authorization':'Bearer '+key}});if(!r.ok)throw new Error(await responseError(r));const j=await r.json();const rows=j.data||j.models||[];const block=/embed|moderation|whisper|tts|audio|transcri|dall[-_ ]?e|image|imagen|veo|rerank|realtime|speech|video|search/i;const likely=/^(gpt|o[134](?:-|$)|chatgpt|claude|command-r|mistral|deepseek|qwen|llama|gemma|phi|yi|kimi|internlm)/i;models=rows.map(m=>({id:m.id||m.name,name:m.name||m.id,detail:'Provider model list · capabilities may need verification'})).filter(m=>m.id&&!block.test(m.id)&&likely.test(m.id));}
- models.sort((a,b)=>a.name.localeCompare(b.name));if(!state.vault||!state.vaultReady)throw new Error('Connect a writable vault before saving model settings.');await writeVaultFile('Settings','models-'+provider+'.json',JSON.stringify({provider,models,updatedAt:new Date().toISOString()},null,2));state.models=models;try{await dbPut('meta',{key:'models:'+provider,value:models})}catch(error){console.warn('Model cache update failed:',error)}return models;}
-async function openModelPicker(){if(!state.credentials[state.provider]?.key&&await vaultHasSavedCredentials()){if(!await unlockCredentialVault())return;}const cached=await dbGet('meta','models:'+state.provider);if(!state.models.length&&cached?.value)state.models=cached.value;const saved=state.models;openModal(`<div class="modal-head"><h2>Choose a model</h2><button class="icon-btn" data-close>×</button></div><p class="modal-desc">Choose a text conversation model from ${esc(PROVIDERS[state.provider]?.name||'your provider')}.</p><input class="input" id="modelSearch" placeholder="Search models…"/><div class="model-list" id="modelList">${saved.length?saved.map(m=>modelHTML(m)).join(''):'<div class="empty"><b>No models loaded</b><p>Connect a provider and fetch its model catalogue.</p></div>'}</div><div class="modal-actions"><button class="btn" id="refreshModels">↻ Refresh models</button><button class="btn" id="manualModel">Enter model ID</button></div><div class="notice warning">Capability note: Gemini and OpenRouter expose useful capability metadata. OpenAI-compatible model lists and Anthropic model lists may not fully describe capabilities. Known non-chat IDs are excluded, but verify a model with its provider before use.</div>`);const list=()=>{const q=$('#modelSearch').value.toLowerCase();$('#modelList').innerHTML=state.models.filter(m=>(m.name+' '+m.id).toLowerCase().includes(q)).map(m=>modelHTML(m)).join('')||'<div class="empty"><b>No matching models</b></div>';$$('[data-model]').forEach(b=>b.onclick=()=>selectModel(b.dataset.model))};$('#modelSearch').oninput=list;$$('[data-model]').forEach(b=>b.onclick=()=>selectModel(b.dataset.model));$('#refreshModels').onclick=async()=>{try{await fetchModels();list();toast('Model catalogue refreshed','success')}catch(e){toast(e.message,'error')}};$('#manualModel').onclick=()=>{const v=prompt('Enter the exact model ID from your provider');if(v?.trim())selectModel(v.trim())}}
+ models.sort((a,b)=>a.name.localeCompare(b.name));state.models=models;const catalogue={provider,models,updatedAt:new Date().toISOString()};try{await dbPut('meta',{key:'models:'+provider,value:models})}catch(error){console.warn('Model cache update failed:',error)}if(state.vault&&state.vaultReady){try{await writeVaultFile('Settings','models-'+provider+'.json',JSON.stringify(catalogue,null,2))}catch(error){console.warn('Model catalogue could not be mirrored to the selected vault:',error)}}return models;}
+async function openModelPicker(){if(!state.credentials[state.provider]?.key){if(await vaultHasSavedCredentials()){if(!await unlockCredentialVault())return;}if(!state.credentials[state.provider]?.key){await openProviderModal();return;}}const cached=await dbGet('meta','models:'+state.provider);if(!state.models.length&&cached?.value)state.models=cached.value;const saved=state.models;openModal(`<div class="modal-head"><h2>Choose a model</h2><button class="icon-btn" data-close>×</button></div><p class="modal-desc">Choose a text conversation model from ${esc(PROVIDERS[state.provider]?.name||'your provider')}.</p><input class="input" id="modelSearch" placeholder="Search models…"/><div class="model-list" id="modelList">${saved.length?saved.map(m=>modelHTML(m)).join(''):'<div class="empty"><b>No models loaded</b><p>Connect a provider and fetch its model catalogue.</p></div>'}</div><div class="modal-actions"><button class="btn" id="refreshModels">↻ Refresh models</button><button class="btn" id="manualModel">Enter model ID</button></div><div class="notice warning">Capability note: Gemini and OpenRouter expose useful capability metadata. OpenAI-compatible model lists and Anthropic model lists may not fully describe capabilities. Known non-chat IDs are excluded, but verify a model with its provider before use.</div>`);const list=()=>{const q=$('#modelSearch').value.toLowerCase();$('#modelList').innerHTML=state.models.filter(m=>(m.name+' '+m.id).toLowerCase().includes(q)).map(m=>modelHTML(m)).join('')||'<div class="empty"><b>No matching models</b></div>';$$('[data-model]').forEach(b=>b.onclick=()=>selectModel(b.dataset.model))};$('#modelSearch').oninput=list;$$('[data-model]').forEach(b=>b.onclick=()=>selectModel(b.dataset.model));$('#refreshModels').onclick=async()=>{try{await fetchModels();list();toast('Model catalogue refreshed','success')}catch(e){toast(e.message,'error')}};$('#manualModel').onclick=()=>{const v=prompt('Enter the exact model ID from your provider');if(v?.trim())selectModel(v.trim())}}
 function modelHTML(m){return `<div class="model-item"><div style="min-width:0"><b>${esc(m.name)}</b><small>${esc(m.id)} · ${esc(m.detail||'Text model')}</small></div><button class="btn ${state.model===m.id?'primary':''}" data-model="${esc(m.id)}">${state.model===m.id?'Selected':'Select'}</button></div>`}
-async function selectModel(id){const previous=state.model;state.model=id;try{await saveConfig();const c=active();if(c){c.model=id;c.provider=state.provider;if(!await persist(c))throw new Error('The conversation could not be saved to the vault.');renderChat()}closeModal();renderAll();toast('Model selected: '+id,'success')}catch(error){state.model=previous;toast('Could not save model selection: '+error.message,'error')}}
-function generationSettings(){const c=active();openModal(`<div class="modal-head"><h2>Conversation instructions</h2><button class="icon-btn" data-close>×</button></div><p class="modal-desc">These settings apply to this conversation.</p><div class="form-group"><label class="form-label">System instruction</label><textarea class="textarea" id="systemPrompt" rows="5" placeholder="You are a helpful assistant…">${esc(c?.systemPrompt||'')}</textarea><div class="hint">Sent as a system instruction where supported. The current provider adapter may map this differently.</div></div><div class="notice">BYOK currently exposes the shared generation controls supported by the selected provider. Unsupported parameters are intentionally not sent.</div><div class="modal-actions"><button class="btn" data-close>Cancel</button><button class="btn primary" id="savePrompt">Save instruction</button></div>`);$('#savePrompt').onclick=async()=>{if(c){const previous=c.systemPrompt;c.systemPrompt=$('#systemPrompt').value;if(!await persist(c)){c.systemPrompt=previous;return;}}closeModal();toast('Instruction saved','success')}}
+async function selectModel(id){const previous=state.model;state.model=id;try{await saveConfig();const c=active();if(c){c.model=id;c.provider=state.provider;if(!await persist(c))throw new Error('The conversation could not be saved in browser storage.');renderChat()}closeModal();renderAll();toast('Model selected: '+id,'success')}catch(error){state.model=previous;toast('Could not save model selection: '+error.message,'error')}}
+function generationSettings(c=active()){openModal(`<div class="modal-head"><h2>Conversation instructions</h2><button class="icon-btn" data-close>×</button></div><p class="modal-desc">These settings apply to this conversation.</p><div class="form-group"><label class="form-label">System instruction</label><textarea class="textarea" id="systemPrompt" rows="5" placeholder="You are a helpful assistant…">${esc(c?.systemPrompt||'')}</textarea><div class="hint">Sent as a system instruction where supported. The current provider adapter may map this differently.</div></div><div class="notice">BYOK currently exposes the shared generation controls supported by the selected provider. Unsupported parameters are intentionally not sent.</div><div class="modal-actions"><button class="btn" data-close>Cancel</button><button class="btn primary" id="savePrompt">Save instruction</button></div>`);$('#savePrompt').onclick=async()=>{if(c){const previous=c.systemPrompt;c.systemPrompt=$('#systemPrompt').value;if(!await persist(c)){c.systemPrompt=previous;return;}}closeModal();toast('Instruction saved','success')}}
 async function handleFiles(files){
  if(!files.length)return;
  if(!state.vault||!state.vaultReady){toast('Connect a vault to keep original and converted attachments. Chat text is saved in browser storage.','error');pickVault();return;}
@@ -1410,7 +1572,9 @@ function htmlToMarkdown(s){const d=new DOMParser().parseFromString(s,'text/html'
 function renderAll(){renderFolders();updateCounts();if(state.view!=='chat')renderView();}
 function updateCounts(){$('#chatCount').textContent=state.chats.filter(c=>c.kind==='chat'&&!c.deleted).length;$('#noteCount').textContent=state.chats.filter(c=>c.kind==='note'&&!c.deleted).length;}
 function folderMenu(name){
- openModal(`<div class="modal-head"><h2>${esc(name)}</h2><button class="icon-btn" data-close>×</button></div><p class="modal-desc">Folder actions</p><div class="model-list"><button class="btn" id="folderRenameAction">✎ Rename folder</button><button class="btn danger" id="folderDeleteAction">⌫ Delete folder</button></div>`);
+ openModal(`<div class="modal-head"><h2>${esc(name)}</h2><button class="icon-btn" data-close>×</button></div><p class="modal-desc">Folder actions</p><div class="model-list"><button class="btn" id="folderNewChat"><i data-lucide="message-square-plus"></i> New chat here</button><button class="btn" id="folderNewNote"><i data-lucide="file-plus-2"></i> New note here</button><button class="btn" id="folderRenameAction"><i data-lucide="pencil"></i> Rename folder</button><button class="btn danger" id="folderDeleteAction"><i data-lucide="trash-2"></i> Delete folder</button></div>`);
+ $('#folderNewChat').onclick=()=>{closeModal();state.folder=name;createChat()};
+ $('#folderNewNote').onclick=()=>{closeModal();state.folder=name;createNote()};
  $('#folderRenameAction').onclick=()=>{closeModal();renameFolder(name)};
  $('#folderDeleteAction').onclick=()=>{closeModal();deleteFolder(name)};
 }
@@ -1444,13 +1608,49 @@ async function deleteFolder(name){
   if(state.folder===name||state.folder.startsWith(name+'/'))state.folder='';renderAll();toast('Folder deleted','success');
  }catch(error){toast('Folder deletion was only partially completed: '+error.message,'error');if(state.vault&&state.vaultReady)await loadVault();await saveVaultFolders().catch(()=>{});renderAll();}
 }
-function renderFolders(){const el=$('#folderList');el.innerHTML=state.folders.map(f=>`<button class="folder-btn ${state.folder===f?'selected':''}" data-folder="${esc(f)}"><span>▱</span>${esc(f)}<span class="count" style="margin-left:auto;color:#73819a;font-size:10px">${state.chats.filter(c=>c.folder===f&&!c.deleted).length}</span></button>`).join('');$$('[data-folder]').forEach(b=>{b.onclick=()=>{state.folder=b.dataset.folder;setView('vault')};attachLongPress(b,()=>folderMenu(b.dataset.folder));});}
+const EXPANDED_FOLDERS_KEY='byok-expanded-folders-v1';
+let expandedFolders=new Set(['Chats','Notes','Projects']);
+try{const saved=JSON.parse(localStorage.getItem(EXPANDED_FOLDERS_KEY)||'null');if(Array.isArray(saved))expandedFolders=new Set(saved);}catch{}
+function expandFolderPath(path){const parts=String(path||'').split('/').filter(Boolean);for(let i=1;i<=parts.length;i++)expandedFolders.add(parts.slice(0,i).join('/'));}
+let treeSortRecent=true;
+function renderFolders(){
+ const el=$('#folderList');if(!el)return;
+ const live=state.chats.filter(c=>!c.deleted);
+ const paths=new Set(['Chats','Notes','Projects',...(state.folders||[])]);
+ for(const r of live){let path=r.folder||(r.kind==='note'?'Notes':'Chats');paths.add(path);const parts=path.split('/');for(let i=1;i<parts.length;i++)paths.add(parts.slice(0,i).join('/'));}
+ const all=[...paths].filter(p=>p&&!['Settings','Attachments','Templates','.trash'].includes(p.split('/')[0])).sort((a,b)=>a.localeCompare(b));
+ state.folders=[...new Set(all)];
+ const directChildren=parent=>all.filter(p=>{if(parent&&!p.startsWith(parent+'/'))return false;const rem=parent?p.slice(parent.length+1):p;return !!rem&&!rem.includes('/');}).sort((a,b)=>a.localeCompare(b));
+ const recordCompare=(a,b)=>treeSortRecent?(b.updatedAt||'').localeCompare(a.updatedAt||''):a.title.localeCompare(b.title);
+ const countIn=path=>live.filter(r=>r.folder===path||String(r.folder||'').startsWith(path+'/')).length;
+ function node(path,level=0){
+  const hasChildren=directChildren(path).some(p=>p!==path)||live.some(r=>r.folder===path);
+  const expanded=expandedFolders.has(path);
+  const iconName=expanded?'folder-open':'folder';
+  const folderRow=`<div class="tree-folder-row ${state.folder===path?'selected':''}" style="--tree-level:${level}"><button class="tree-disclosure" data-folder-expand="${esc(path)}" aria-label="${expanded?'Collapse':'Expand'} ${esc(path)}" aria-expanded="${expanded}"><i data-lucide="${expanded?'chevron-down':'chevron-right'}"></i></button><button class="tree-folder-label" data-folder-open="${esc(path)}" title="Open ${esc(path)}"><i data-lucide="${iconName}"></i><span>${esc(path.split('/').pop())}</span><small>${countIn(path)||''}</small></button><button class="tree-more" data-folder-more="${esc(path)}" aria-label="More actions for ${esc(path)}"><i data-lucide="more-horizontal"></i></button></div>`;
+  if(!expanded)return folderRow;
+  const kids=directChildren(path).filter(p=>p!==path).map(p=>node(p,level+1)).join('');
+  const records=live.filter(r=>(r.folder||(r.kind==='note'?'Notes':'Chats'))===path).sort(recordCompare).map(r=>`<button class="tree-document ${state.activeId===r.id&&state.view==='chat'?'active':''}" style="--tree-level:${level+1}" data-tree-record="${esc(r.id)}" title="${esc(r.title)}"><i data-lucide="${r.kind==='note'?'file-text':'message-square'}"></i><span>${esc(r.title||'Untitled')}</span>${r.favorite?'<i data-lucide="star" class="tree-favorite"></i>':''}</button>`).join('');
+  return folderRow+`<div class="tree-children">${kids}${records}</div>`;
+ }
+ const roots=directChildren('').map(p=>node(p,0)).join('');
+ el.innerHTML=roots||'<div class="tree-empty">Your files will appear here.</div>';
+ try{localStorage.setItem(EXPANDED_FOLDERS_KEY,JSON.stringify([...expandedFolders]));}catch{}
+ renderIcons(el);
+ $$('[data-folder-expand]',el).forEach(b=>b.onclick=e=>{e.stopPropagation();const p=b.dataset.folderExpand;if(expandedFolders.has(p))expandedFolders.delete(p);else expandedFolders.add(p);renderFolders();});
+ $$('[data-folder-open]',el).forEach(b=>{b.onclick=()=>{state.folder=b.dataset.folderOpen;setView('vault');};attachLongPress(b,()=>folderMenu(b.dataset.folderOpen));});
+ $$('[data-folder-more]',el).forEach(b=>b.onclick=e=>{e.stopPropagation();folderMenu(b.dataset.folderMore)});
+ $$('[data-tree-record]',el).forEach(b=>{const rec=()=>state.chats.find(x=>x.id===b.dataset.treeRecord);let held=false;attachLongPress(b,()=>{const c=rec();if(c){held=true;recordMenu(c);setTimeout(()=>held=false,900)}});b.onclick=()=>{if(!held){const c=rec();if(c)openChat(c.id)}};});
+ const query=$('#treeSearch')?.value?.trim().toLowerCase()||'';if(query){$$('.tree-document',el).forEach(item=>item.classList.toggle('hidden',!item.textContent.toLowerCase().includes(query)));$$('.tree-folder-row',el).forEach(item=>{const name=item.textContent.toLowerCase();if(name.includes(query))item.classList.remove('hidden');});}
+ const status=$('#sidebarVaultName');if(status)status.textContent=state.vaultName||'Documents';
+ const counts=$('#sidebarVaultCounts');if(counts)counts.textContent=`${live.length} documents · ${state.folders.length} folders`;
+}
 async function addFolder(){
  const f=prompt('Folder name (use / for a nested folder)');if(!f?.trim())return;
  const parts=safeVaultSegments(f.trim()),name=parts.join('/');
  if(!name||['Settings','Attachments','Templates','.trash'].includes(parts[0])){toast('Choose a valid folder name.','error');return}
  if(state.folders.includes(name)){toast('Folder already exists');return}
- try{if(state.vault&&state.vaultReady)await ensureDir(name);state.folders.push(name);await saveVaultFolders();renderAll();toast('Folder created','success')}
+ try{if(state.vault&&state.vaultReady)await ensureDir(name);state.folders.push(name);expandFolderPath(name);await saveVaultFolders();renderAll();toast('Folder created','success')}
  catch(error){toast('Could not create folder: '+error.message,'error')}
 }
 function recordItem(c){const i=c.kind==='note'?'▤':'✦';return `<div class="file-item" data-record-id="${esc(c.id)}" role="button" tabindex="0" aria-label="Open ${esc(c.title)}"><div class="file-icon">${i}</div><div class="file-info"><b>${esc(c.title)}</b><small>${esc(c.folder||'Chats')} · ${fmtDate(c.updatedAt)} · ${(c.messages||[]).length} ${(c.messages||[]).length===1?'message':'messages'}</small></div>${c.favorite?'<span class="tag">★ Favorite</span>':''}<div class="file-actions"><button class="icon-btn" title="Open" aria-label="Open" data-open="${esc(c.id)}">↗</button><button class="icon-btn" title="More actions" aria-label="More actions" data-menu="${esc(c.id)}">⋯</button></div></div>`}
@@ -1487,24 +1687,81 @@ function renderView(){if(state.view==='chat')return;const q=state.filter.toLower
  if(state.view==='trash'&&$('#emptyTrash'))$('#emptyTrash').onclick=async()=>{if(!confirm('Permanently delete all items in Trash? This cannot be undone.'))return;for(const c of state.chats.filter(x=>x.deleted)){await dbDel('chats',c.id);if(state.vault&&c._fileName){try{await removeVaultFile('.trash',c._fileName)}catch{}}}state.chats=state.chats.filter(x=>!x.deleted);renderAll();toast('Trash emptied')};
  if(state.view==='trash'){$$('#recordList [data-menu]').forEach(b=>b.onclick=()=>{const c=state.chats.find(x=>x.id===b.dataset.menu);openModal(`<div class="modal-head"><h2>${esc(c.title)}</h2><button class="icon-btn" data-close>×</button></div><div class="model-list"><button class="btn" id="restoreItem">↶ Restore</button><button class="btn danger" id="deleteForever">Permanently delete</button></div>`);$('#restoreItem').onclick=()=>{closeModal();restoreRecord(c)};$('#deleteForever').onclick=async()=>{closeModal();if(confirm('Delete permanently?')){if(state.vault&&c._fileName){try{await removeVaultFile('.trash',c._fileName)}catch(e){toast('Could not remove the vault file: '+e.message,'error');return}}await dbDel('chats',c.id);state.chats=state.chats.filter(x=>x.id!==c.id);renderAll()}}})}
 }
-function renderModelsView(){const e=$('#view-models');const providers=Object.entries(PROVIDERS);e.innerHTML=`<h1 class="section-title">Models & providers</h1><p class="section-sub">Bring your own API key. Requests go directly from this browser to the selected provider.</p><div class="cards">${providers.map(([id,p])=>`<div class="card"><div style="display:flex;align-items:center;gap:10px;margin-bottom:12px"><div class="provider-logo">${p.icon}</div><div><h3 style="margin:0">${p.name}</h3><small style="color:var(--muted);font-size:10px">${state.credentials[id]?'Connected':state.credentialsLocked?'Saved in vault · locked':'Not connected'}</small></div></div><p>${id==='custom'?'Connect an OpenAI-compatible endpoint.':'Use your own provider key and model access.'}</p><div style="display:flex;gap:7px;margin-top:15px"><button class="btn primary" data-provider="${id}">${state.credentials[id]||state.credentialsLocked?'Manage':'Connect'}</button>${id===state.provider?'<span class="tag" style="align-self:center">Active</span>':''}</div></div>`).join('')}</div><div class="card" style="margin-top:15px"><div class="setting-row"><div><strong>Current model</strong><small>${esc(state.model||'No model selected')}</small></div><button class="btn" id="chooseModel">Choose model</button></div><div class="setting-row"><div><strong>Refresh model list</strong><small>Fetch the latest catalogue from the active provider.</small></div><button class="btn" id="refreshModelsView">↻ Refresh</button></div></div><div class="notice warning">Model filtering depends on provider metadata. The app excludes known embedding, audio, image, moderation and other non-chat models. OpenAI-compatible model lists may not expose enough information to prove text-to-text support; confirm model capabilities with the provider.</div>`;$$('[data-provider]').forEach(b=>b.onclick=()=>{state.provider=b.dataset.provider;openProviderModal()});$('#chooseModel').onclick=openModelPicker;$('#refreshModelsView').onclick=async()=>{try{if(!state.credentials[state.provider]?.key&&await vaultHasSavedCredentials()){if(!await unlockCredentialVault())return;}await fetchModels();toast(state.models.length+' eligible models loaded','success')}catch(e){toast(e.message,'error')}}}
-function renderSettingsView(){const e=$('#view-settings');e.innerHTML=`<h1 class="section-title">Settings</h1><p class="section-sub">Customize your workspace and manage local data.</p><div class="card"><div class="setting-row"><div><strong>Conversation storage</strong><small>Chats are saved in this browser using IndexedDB. ${state.browserStoragePersistent===true?"The browser granted persistent storage.":state.browserStoragePersistent===false?"The browser may evict site data; export backups regularly.":"Storage persistence status is not available."}</small></div><span class="tag">Browser only</span></div><div class="setting-row"><div><strong>Markdown vault for notes & assets</strong><small>${esc(vaultStorageDescription())}</small></div><button class="btn primary" id="vaultSetting">${state.vaultMode==='opfs'?'Vault options':state.vaultReady?'Change folder':'Choose folder'}</button></div><div class="setting-row"><div><strong>Import Markdown files</strong><small>Import Markdown notes into the selected vault. Imported chat Markdown is added to browser chat storage.</small></div><button class="btn" id="importSetting">Import .md</button></div><div class="setting-row"><div><strong>Import an existing vault folder</strong><small>Import a folder tree of Markdown notes, including nested folders.</small></div><button class="btn" id="importFolderSetting">Import folder</button></div><div class="setting-row"><div><strong>Import / export ZIP</strong><small>Back up browser-stored chats together with notes, credentials and attachments from the connected vault.</small></div><div style="display:flex;gap:6px;flex-wrap:wrap"><button class="btn" id="importZipSetting">Import chat / workspace ZIP</button><button class="btn" id="exportSetting">Export workspace ZIP</button></div></div></div><div class="card" style="margin-top:13px"><div class="setting-row"><div><strong>Appearance</strong><small>Use the current dark workspace theme.</small></div><span class="tag">Dark</span></div><div class="setting-row"><div><strong>Active provider</strong><small>${esc(PROVIDERS[state.provider]?.name||'Custom')} · ${esc(state.model||'No model selected')}</small></div><button class="btn" id="providerSetting">Manage</button></div><div class="setting-row"><div><strong>Encrypted provider credentials</strong><small>${state.credentialsLocked?'Saved in this vault · locked for this session':Object.keys(state.credentials).length?'Unlocked in memory · encrypted copy saved in vault':'No saved credentials'}.</small></div><button class="btn danger" id="clearKeys">${Object.keys(state.credentials).length?'Lock credentials':'Lock / clear'}</button></div></div><div class="card" style="margin-top:13px"><div class="setting-row"><div><strong>Browser & storage compatibility</strong><small>${esc(browserEnvironmentLabel())} · ${BROWSER_ENV.directFolderPicker?'direct folder picker available':'no direct folder picker'} · ${BROWSER_ENV.opfs?'private local storage available':'private local storage unavailable'} · ${BROWSER_ENV.folderInput?'folder import supported':'folder import unavailable'}</small></div><span class="tag">${BROWSER_ENV.directFolderPicker?'Direct folders':BROWSER_ENV.opfs?'Private vault':'Import / export'}</span></div><div class="setting-row"><div><strong>Vault data location (not chat content)</strong><small>${esc(vaultStorageDescription())}</small></div></div></div><div class="card" style="margin-top:13px"><h3>Privacy & storage</h3><p>• Storage depends on browser capabilities: some browsers can write to a selected folder, while mobile browsers may use private site storage with Markdown/ZIP import and export.<br>• API keys are encrypted in Settings/credentials.enc using AES-256-GCM and PBKDF2. The vault password is never stored; unlock again after restarting the browser.<br>• AI requests and any attached text are sent to the selected provider when you press Send.<br>• AnyDoc conversion runs locally in WebAssembly after its converter is downloaded from the CDN.<br>• Conversations are stored only in this browser's IndexedDB, not in the selected vault. They remain after reloads in this same browser profile and site origin, but clearing site data or using another browser/device removes access; use Export ZIP for backups. Notes remain Markdown files in the selected vault. Original attachments and converted Markdown are saved under Attachments/. Provider settings and encrypted API credentials remain under Settings/ in the selected vault.</p></div>`;
-const feedbackCard=document.createElement('div');feedbackCard.className='card';feedbackCard.style.marginTop='13px';
-feedbackCard.innerHTML=`<h3 style="margin:0 0 5px">Sound & touch feedback</h3><p style="margin:0 0 10px;color:var(--muted);font-size:12px;line-height:1.6">Subtle locally generated clicks, occasional scroll ticks and gentle vibration. No speech or narration. Audio starts after your first interaction, as browser policies require.</p><div class="feedback-options"><label class="feedback-row"><span><strong>Interaction sounds</strong><small>Soft clicks for navigation, opening panels and actions.</small></span><input id="feedbackSound" type="checkbox" ${feedbackPrefs.sound?'checked':''}></label><label class="feedback-row"><span><strong>Gear-like scrolling texture</strong><small>A quiet tick after a short amount of user scrolling.</small></span><input id="feedbackScroll" type="checkbox" ${feedbackPrefs.scroll?'checked':''}></label><label class="feedback-row"><span><strong>Haptic feedback</strong><small>Short vibration on supported Android devices and browsers.</small></span><input id="feedbackHaptics" type="checkbox" ${feedbackPrefs.haptics?'checked':''}></label><div class="feedback-row" style="display:block"><div style="display:flex;justify-content:space-between;gap:12px"><span><strong>Sound volume</strong><small>Keep it subtle during long sessions.</small></span></div><div class="feedback-volume" style="margin-top:10px"><input id="feedbackVolume" type="range" min="0" max="100" value="${Math.round(feedbackPrefs.volume*100)}"><output id="feedbackVolumeValue">${Math.round(feedbackPrefs.volume*100)}%</output></div></div></div><div style="display:flex;justify-content:flex-end;margin-top:13px"><button class="btn" id="previewFeedback">♫ Preview feedback</button></div>`;
-e.appendChild(feedbackCard);
-$('#feedbackSound').onchange=e=>{feedbackPrefs.sound=e.target.checked;saveFeedbackPrefs();if(feedbackPrefs.sound)playFeedback('success')};
-$('#feedbackScroll').onchange=e=>{feedbackPrefs.scroll=e.target.checked;saveFeedbackPrefs();playFeedback('tap')};
-$('#feedbackHaptics').onchange=e=>{feedbackPrefs.haptics=e.target.checked;saveFeedbackPrefs();if(feedbackPrefs.haptics)vibrateFeedback('success')};
-$('#feedbackVolume').oninput=e=>{feedbackPrefs.volume=Number(e.target.value)/100;$('#feedbackVolumeValue').textContent=e.target.value+'%';saveFeedbackPrefs()};
-$('#previewFeedback').onclick=()=>{const was=feedbackPrefs.sound;feedbackPrefs.sound=true;playFeedback('tap');setTimeout(()=>playFeedback('success',{haptic:false}),110);feedbackPrefs.sound=was;vibrateFeedback('success')};
-$('#vaultSetting').onclick=pickVault;$('#importSetting').onclick=()=>{const x=document.createElement('input');x.type='file';x.accept='.md';x.multiple=true;x.onchange=async()=>{let imported=0,skipped=0;for(const f of x.files){const r=parseMarkdown(await f.text(),f.name);r.id=uid();if(r.kind==='chat'||state.vaultReady){if(await persist(r)){state.chats.unshift(r);imported++}else skipped++}else skipped++}renderAll();toast(`Imported ${imported} document(s) into their correct storage locations${skipped?' · '+skipped+' skipped (notes need a vault)':''}`,'success')};x.click()};$('#importFolderSetting').onclick=openVaultFolderImport;$('#importZipSetting').onclick=()=>$('#vaultZipImportInput').click();$('#exportSetting').onclick=exportVaultZip;$('#providerSetting').onclick=openProviderModal;$('#clearKeys').onclick=lockCredentials}
+function renderModelsView(){const e=$('#view-models');const providers=Object.entries(PROVIDERS);e.innerHTML=`<h1 class="section-title">Models & providers</h1><p class="section-sub">Bring your own API key. Requests go directly from this browser to the selected provider.</p><div class="cards">${providers.map(([id,p])=>`<div class="card"><div style="display:flex;align-items:center;gap:10px;margin-bottom:12px"><div class="provider-logo">${p.icon}</div><div><h3 style="margin:0">${p.name}</h3><small style="color:var(--muted);font-size:10px">${state.credentials[id]?'Connected':state.credentialsLocked?'Saved · unlocks in this browser':'Not connected'}</small></div></div><p>${id==='custom'?'Connect an OpenAI-compatible endpoint.':'Use your own provider key and model access.'}</p><div style="display:flex;gap:7px;margin-top:15px"><button class="btn primary" data-provider="${id}">${state.credentials[id]||state.credentialsLocked?'Manage':'Connect'}</button>${id===state.provider?'<span class="tag" style="align-self:center">Active</span>':''}</div></div>`).join('')}</div><div class="card" style="margin-top:15px"><div class="setting-row"><div><strong>Current model</strong><small>${esc(state.model||'No model selected')}</small></div><button class="btn" id="chooseModel">Choose model</button></div><div class="setting-row"><div><strong>Refresh model list</strong><small>Fetch the latest catalogue from the active provider.</small></div><button class="btn" id="refreshModelsView">↻ Refresh</button></div></div><div class="notice warning">Model filtering depends on provider metadata. The app excludes known embedding, audio, image, moderation and other non-chat models. OpenAI-compatible model lists may not expose enough information to prove text-to-text support; confirm model capabilities with the provider.</div>`;$$('[data-provider]').forEach(b=>b.onclick=()=>{state.provider=b.dataset.provider;openProviderModal()});$('#chooseModel').onclick=openModelPicker;$('#refreshModelsView').onclick=async()=>{try{if(!state.credentials[state.provider]?.key&&await vaultHasSavedCredentials()){if(!await unlockCredentialVault())return;}await fetchModels();toast(state.models.length+' eligible models loaded','success')}catch(e){toast(e.message,'error')}}}
+const SETTINGS_CATEGORIES=[
+ {id:'general',title:'General',subtitle:'Workspace and application behaviour',icon:'user-round'},
+ {id:'appearance',title:'Appearance',subtitle:'Theme, typeface and reading size',icon:'palette'},
+ {id:'interface',title:'Interface',subtitle:'Navigation, gestures and feedback',icon:'smartphone'},
+ {id:'editor',title:'Editor',subtitle:'Markdown editing and autosave',icon:'pencil-line'},
+ {id:'files',title:'Files and links',subtitle:'Vault, folders and document handling',icon:'folder-cog'},
+ {id:'hotkeys',title:'Hotkeys',subtitle:'Keyboard shortcuts',icon:'keyboard'},
+ {id:'keychain',title:'Keychain',subtitle:'AI providers and API credentials',icon:'key-round'},
+ {id:'core',title:'Core plugins',subtitle:'Built-in workspace features',icon:'puzzle'},
+ {id:'community',title:'Community plugins',subtitle:'Optional integrations and libraries',icon:'blocks'}
+];
+function renderSettingsView(){
+ const e=$('#view-settings');
+ e.innerHTML=`<div class="settings-page"><div class="settings-header"><div><h1>Settings</h1><small>Make BYOK feel like your workspace.</small></div><button class="settings-close" id="settingsClose" aria-label="Close settings"><i data-lucide="x"></i></button></div><div class="settings-search"><i data-lucide="search"></i><input id="settingsSearch" type="search" placeholder="Search settings…" autocomplete="off"></div><div class="settings-caption" id="settingsCaption">Options</div><div class="settings-category-card" id="settingsCategoryList">${SETTINGS_CATEGORIES.map((x,i)=>`<button class="settings-category" data-setting-category="${x.id}"><i data-lucide="${x.icon}"></i><span><b>${x.title}</b><small>${x.subtitle}</small></span><i data-lucide="chevron-right" class="settings-chevron"></i></button>`).join('')}</div><div class="settings-detail hidden" id="settingsDetail"></div></div>`;
+ renderIcons(e);
+ $('#settingsClose').onclick=()=>setView(state.settingsReturnView&&state.settingsReturnView!=='settings'?state.settingsReturnView:'chats');
+ $('#settingsSearch').oninput=ev=>{const q=ev.target.value.trim().toLowerCase();$$('[data-setting-category]',e).forEach(row=>{const item=SETTINGS_CATEGORIES.find(x=>x.id===row.dataset.settingCategory);row.classList.toggle('hidden',!!q&&!`${item.title} ${item.subtitle}`.toLowerCase().includes(q));});};
+ $$('[data-setting-category]',e).forEach(row=>row.onclick=()=>renderSettingsCategory(row.dataset.settingCategory));
+}
+function renderSettingsCategory(id){
+ const detail=$('#settingsDetail'),list=$('#settingsCategoryList'),caption=$('#settingsCaption');if(!detail)return;
+ const cat=SETTINGS_CATEGORIES.find(x=>x.id===id);if(!cat)return;
+ list.classList.add('hidden');caption.textContent=cat.title;
+ const row=(title,desc,control)=>`<div class="setting-option"><div class="setting-option-copy"><b>${title}</b><small>${desc}</small></div><div class="setting-option-control">${control||''}</div></div>`;
+ const button=(id,label,icon='arrow-up-right',extra='')=>`<button class="settings-action ${extra}" id="${id}"><i data-lucide="${icon}"></i>${label}</button>`;
+ let html=`<div class="settings-detail-head"><button class="settings-back" id="settingsBack"><i data-lucide="arrow-left"></i></button><div><b>${cat.title}</b><small>${cat.subtitle}</small></div></div>`;
+ if(id==='general'){
+  html+=`<div class="settings-group-label">Workspace</div><div class="settings-group">${row('Conversation storage','Chats and messages are saved in this browser using IndexedDB.','<span class="settings-tag">Browser memory</span>')}${row('Browser storage protection',state.browserStoragePersistent===true?'This browser granted persistent storage.':state.browserStoragePersistent===false?'The browser may remove site data when storage is low.':'Storage persistence status is not available.',`<span class="settings-tag">${state.browserStoragePersistent===true?'Enabled':'Best effort'}</span>`)}${row('Current provider',`${esc(PROVIDERS[state.provider]?.name||'Custom')} · ${esc(state.model||'No model selected')}`,button('generalProvider','Manage','sparkles'))}</div><div class="settings-group-label">Backup</div><div class="settings-group">${row('Export chats','Download browser-stored chats as Markdown files in a ZIP.',button('generalExportChats','Export ZIP','download'))}${row('Export workspace','Back up chats plus notes and assets from the connected vault.',button('generalExportAll','Export backup','archive'))}</div>`;
+ }else if(id==='appearance'){
+  html+=`<div class="settings-group-label">Theme</div><div class="settings-group">${row('Color theme','Choose the interface appearance.',`<select class="settings-select" id="prefTheme"><option value="dark" ${uiPrefs.theme==='dark'?'selected':''}>Dark</option><option value="light" ${uiPrefs.theme==='light'?'selected':''}>Light</option></select>`)}${row('Typeface','Choose the reading and interface font.',`<select class="settings-select" id="prefFont"><option value="system" ${uiPrefs.fontFamily==='system'?'selected':''}>System / Inter</option><option value="serif" ${uiPrefs.fontFamily==='serif'?'selected':''}>Serif</option><option value="mono" ${uiPrefs.fontFamily==='mono'?'selected':''}>Monospace</option></select>`)}</div><div class="settings-group-label">Reading</div><div class="settings-group">${row('Reading font size',`Currently ${uiPrefs.fontSize}px. The default is 16px.`,`<div class="font-size-control"><input id="prefFontSize" type="range" min="14" max="24" step="1" value="${uiPrefs.fontSize}"><output id="prefFontSizeValue">${uiPrefs.fontSize}px</output></div>`)}${row('Reading preview','A sample of your document typography.',`<div class="type-preview" id="typePreview">Aa · The quick brown fox jumps over the lazy dog.</div>`)}</div>`;
+ }else if(id==='interface'){
+  html+=`<div class="settings-group-label">Reading experience</div><div class="settings-group">${row('Hide controls while reading','Scrolling down hides the app chrome. Scrolling up reveals it.',`<input class="settings-switch" id="prefReaderAutoHide" type="checkbox" ${uiPrefs.readerAutoHide?'checked':''}>`)}${row('Compact message composer','Shrink the composer while reading and expand it when tapped.',`<input class="settings-switch" id="prefCompactComposer" type="checkbox" ${uiPrefs.compactComposer?'checked':''}>`)}</div><div class="settings-group-label">Sound and touch</div><div class="settings-group">${row('Interaction sounds','Soft taps when opening screens and menus.',`<input class="settings-switch" id="feedbackSound" type="checkbox" ${feedbackPrefs.sound?'checked':''}>`)}${row('Scroll ticks','Subtle feedback during manual scrolling.',`<input class="settings-switch" id="feedbackScroll" type="checkbox" ${feedbackPrefs.scroll?'checked':''}>`)}${row('Haptic feedback','Vibration on supported Android browsers.',`<input class="settings-switch" id="feedbackHaptics" type="checkbox" ${feedbackPrefs.haptics?'checked':''}>`)}${row('Sound volume','Adjust the interaction sound level.',`<div class="font-size-control"><input id="feedbackVolume" type="range" min="0" max="100" value="${Math.round(feedbackPrefs.volume*100)}"><output id="feedbackVolumeValue">${Math.round(feedbackPrefs.volume*100)}%</output></div>`)}</div><div class="settings-inline-actions">${button('previewFeedback','Preview feedback','volume-2')}</div>`;
+ }else if(id==='editor'){
+  html+=`<div class="settings-group-label">Markdown editor</div><div class="settings-group">${row('Autosave notes','Save edits automatically after a short pause.',`<input class="settings-switch" id="prefAutoSave" type="checkbox" ${uiPrefs.autoSave?'checked':''}>`)}${row('Spell check','Use the browser spell checker in the note editor.',`<input class="settings-switch" id="prefSpellcheck" type="checkbox" ${uiPrefs.spellcheck?'checked':''}>`)}${row('New notes open in','Choose the initial note mode.',`<select class="settings-select" id="prefNoteView"><option value="read" ${uiPrefs.defaultNoteView==='read'?'selected':''}>Reading view</option><option value="edit" ${uiPrefs.defaultNoteView==='edit'?'selected':''}>Editor</option></select>`)}</div><div class="settings-note">BYOK uses Marked for Markdown, DOMPurify to sanitize rendered HTML, Highlight.js for code and KaTeX for equations.</div>`;
+ }else if(id==='files'){
+  html+=`<div class="settings-group-label">Vault location</div><div class="settings-group">${row('Selected vault',esc(vaultStorageDescription()),button('vaultSetting',state.vaultReady?'Vault options':'Choose vault','folder'))}${row('Import Markdown','Bring existing Markdown notes into your vault.',button('importSetting','Import .md','file-plus'))}${row('Import folder','Import a folder tree of Markdown notes.',button('importFolderSetting','Import folder','folder-input'))}${row('Import / export ZIP','Move your notes and workspace backup.',`<div class="settings-action-stack">${button('importZipSetting','Import ZIP','archive')}${button('exportSetting','Export ZIP','download')}</div>`)}</div><div class="settings-group-label">Links</div><div class="settings-group">${row('Internal note links','Use Obsidian-style [[Note Name]] links in Markdown documents.','<span class="settings-tag">Supported in text</span>')}${row('Original attachments','Files are kept under Attachments/ in the selected vault.', '<span class="settings-tag">Local vault</span>')}</div>`;
+ }else if(id==='hotkeys'){
+  html+=`<div class="settings-group-label">Keyboard shortcuts</div><div class="settings-group hotkey-list">${[['Ctrl / ⌘ + K','Search workspace'],['Ctrl / ⌘ + N','New chat'],['Ctrl / ⌘ + Shift + N','New note'],['Esc','Close menu or dialog'],['Enter','Send message'],['Shift + Enter','New line'],['Ctrl / ⌘ + Enter','Save note']].map(([k,v])=>row(v,'',`<kbd>${k}</kbd>`)).join('')}</div>`;
+ }else if(id==='keychain'){
+  html+=`<div class="settings-group-label">AI credentials</div><div class="settings-group">${row('Credential storage','Keys are AES-GCM encrypted automatically. No vault password is requested. The decryption key is managed by this browser profile; no vault password is needed.',`<span class="settings-tag">${Object.keys(state.credentials).length?'Unlocked':'Private'}</span>`)}${row('Connected providers',`${Object.keys(state.credentials).length} provider key(s) available in this browser.`,button('providerSetting','Manage providers','key-round'))}${row('Clear in-memory keys','Hide keys for this session. They can unlock automatically again in this browser.',button('clearKeys','Lock now','lock'))}</div><div class="settings-note">The browser-managed encryption key is stored in IndexedDB. Copying credentials.enc to another device does not copy that key; reconnect your provider on the other device.</div>`;
+ }else if(id==='core'){
+  const features=[['File explorer','Browse folders, chats and notes from the sidebar.'],['Full-text search','Search conversation titles and message content.'],['Favorites','Pin important chats and notes.'],['Markdown rendering','Render tables, task lists, code blocks and equations.'],['Document conversion','Convert supported documents to Markdown using AnyDoc WASM.'],['Browser chat memory','Keep conversations in IndexedDB for this browser profile.']];
+  html+=`<div class="settings-group-label">Built-in features</div><div class="settings-group">${features.map(([t,d])=>row(t,d,'<span class="settings-tag enabled">Enabled</span>')).join('')}</div>`;
+ }else if(id==='community'){
+  html+=`<div class="settings-group-label">Extensions</div><div class="settings-group">${row('Community plugin system','A third-party plugin marketplace is not enabled in this standalone build.','<span class="settings-tag">Not enabled</span>')}${row('Marked + DOMPurify','Markdown parsing and safe HTML rendering.','<span class="settings-tag enabled">Integrated</span>')}${row('Highlight.js + KaTeX','Code highlighting and math rendering.','<span class="settings-tag enabled">Integrated</span>')}${row('AnyDoc WebAssembly','Local document conversion after the converter loads.','<span class="settings-tag enabled">Integrated</span>')}</div>`;
+ }
+ detail.innerHTML=html;detail.classList.remove('hidden');renderIcons(detail);
+ $('#settingsBack').onclick=()=>{detail.classList.add('hidden');list.classList.remove('hidden');caption.textContent='Options';};
+ const wire=(id,fn)=>{const el=$('#'+id,detail);if(el)el.onclick=fn;};
+ wire('generalProvider',openProviderModal);wire('generalExportChats',exportChatsZip);wire('generalExportAll',exportVaultZip);
+ wire('vaultSetting',pickVault);
+ wire('importSetting',()=>{const x=document.createElement('input');x.type='file';x.accept='.md';x.multiple=true;x.onchange=async()=>{let imported=0;for(const f of x.files){const r=parseMarkdown(await f.text(),f.name);r.id=uid();if(r.kind==='chat'||state.vaultReady){if(await persist(r)){state.chats.unshift(r);imported++;}}}renderAll();toast(`Imported ${imported} Markdown document(s).`,'success')};x.click()});
+ wire('importFolderSetting',openVaultFolderImport);wire('importZipSetting',()=>$('#vaultZipImportInput').click());wire('exportSetting',exportVaultZip);wire('providerSetting',openProviderModal);wire('clearKeys',lockCredentials);
+ const theme=$('#prefTheme',detail);if(theme)theme.onchange=()=>{uiPrefs.theme=theme.value;saveUiPrefs();applyUiPrefs()};
+ const font=$('#prefFont',detail);if(font)font.onchange=()=>{uiPrefs.fontFamily=font.value;saveUiPrefs();applyUiPrefs()};
+ const fs=$('#prefFontSize',detail);if(fs)fs.oninput=()=>{uiPrefs.fontSize=Number(fs.value);$('#prefFontSizeValue').textContent=fs.value+'px';document.documentElement.style.setProperty('--reader-font-size',fs.value+'px');saveUiPrefs()};
+ const switchPref=(id,key)=>{const el=$('#'+id,detail);if(el)el.onchange=()=>{uiPrefs[key]=el.checked;saveUiPrefs();applyUiPrefs();if(key==='readerAutoHide'&&!el.checked)setReaderChromeHidden(false);};};
+ switchPref('prefReaderAutoHide','readerAutoHide');switchPref('prefCompactComposer','compactComposer');switchPref('prefAutoSave','autoSave');switchPref('prefSpellcheck','spellcheck');
+ const noteView=$('#prefNoteView',detail);if(noteView)noteView.onchange=()=>{uiPrefs.defaultNoteView=noteView.value;saveUiPrefs()};
+ const feedbackSwitch=(id,key)=>{const el=$('#'+id,detail);if(el)el.onchange=()=>{feedbackPrefs[key]=el.checked;saveFeedbackPrefs();if(key==='sound'&&el.checked)playFeedback('success');if(key==='haptics'&&el.checked)vibrateFeedback('success')};};
+ feedbackSwitch('feedbackSound','sound');feedbackSwitch('feedbackScroll','scroll');feedbackSwitch('feedbackHaptics','haptics');
+ const vol=$('#feedbackVolume',detail);if(vol)vol.oninput=()=>{feedbackPrefs.volume=Number(vol.value)/100;$('#feedbackVolumeValue').textContent=vol.value+'%';saveFeedbackPrefs()};
+ wire('previewFeedback',()=>{const prev=feedbackPrefs.sound;feedbackPrefs.sound=true;playFeedback('tap');setTimeout(()=>playFeedback('success',{haptic:false}),110);feedbackPrefs.sound=prev;vibrateFeedback('success')});
+}
+
 function globalSearch(){state.filter=$('#globalSearch').value||'';if(['chats','notes','favorites','vault','trash'].includes(state.view))renderView()}
 $('#globalSearch').addEventListener('input',globalSearch);
 $('#vaultFolderImportInput').addEventListener('change',async e=>{await importVaultFolderFiles(e.target.files);e.target.value=''});
 $('#vaultZipImportInput').addEventListener('change',async e=>{await importVaultZip(e.target.files?.[0]);e.target.value=''});
-$('#newChat').onclick=()=>{playFeedback('tap');createChat()};$('#quickNote').onclick=()=>{playFeedback('tap');createNote()};$('#mobileNewChat').onclick=()=>{playFeedback('tap');state.view==='notes'?createNote():createChat()};$('#topSettings').onclick=()=>setView('settings');$('#addFolder').onclick=()=>{playFeedback('tap');addFolder()};
+$('#newChat').onclick=()=>{playFeedback('tap');createChat()};$('#quickNote').onclick=()=>{playFeedback('tap');createNote()};$('#topNewNote')?.addEventListener('click',()=>{playFeedback('tap');createNote()});
+ $('#sidebarClose').onclick=closeSidebar;$('#sidebarVault').onclick=()=>pickVault();$('#treeSearch').oninput=()=>renderFolders();$('#treeSort').onclick=()=>{treeSortRecent=!treeSortRecent;renderFolders();toast(treeSortRecent?'Sorted by recent activity':'Sorted by name')};$('#collapseFolders').onclick=()=>{expandedFolders.clear();renderFolders()};$('#mobileNewChat').onclick=()=>{playFeedback('tap');state.view==='notes'?createNote():createChat()};$('#topSettings').onclick=()=>setView('settings');$('#addFolder').onclick=()=>{playFeedback('tap');addFolder()};
 $('#menuBtn').onclick=()=>{const isOpen=$('#sidebar').classList.contains('open');if(isOpen){closeSidebar();}else{$('#sidebar').classList.add('open');$('#scrim').classList.add('show');$('#menuBtn').setAttribute('aria-expanded','true');playFeedback('modal');}};
 $('#scrim').onclick=()=>{closeSidebar();playFeedback('back')};
+ document.addEventListener('keydown',e=>{if((e.ctrlKey||e.metaKey)&&e.key.toLowerCase()==='k'){e.preventDefault();$('#globalSearch')?.focus();}if((e.ctrlKey||e.metaKey)&&e.key.toLowerCase()==='n'&&!e.shiftKey){e.preventDefault();createChat();}if((e.ctrlKey||e.metaKey)&&e.shiftKey&&e.key.toLowerCase()==='n'){e.preventDefault();createNote();}});
 document.addEventListener('keydown',e=>{if(e.key==='Escape'){closeSidebar();closeModal();playFeedback('back')}});
 $$('[data-view]').forEach(b=>b.onclick=()=>setView(b.dataset.view));$('#mobileNav').querySelectorAll('button').forEach(b=>b.onclick=()=>setView(b.dataset.view));
 window.addEventListener('popstate',event=>{
@@ -1517,6 +1774,7 @@ window.addEventListener('popstate',event=>{
  else{toast('Press Back again to leave BYOK');}
 });
 initScrollFeedback();
+renderIcons(document);
 // Restore the most recently opened real document, if one exists.
 await init();if(!state.activeId){const first=state.chats.find(c=>!c.deleted&&c.kind==='chat');if(first)state.activeId=first.id}renderAll();const initialNav=state.activeId?{view:'chat',activeId:state.activeId,folder:state.folder,filter:state.filter}:navSnapshot();initializeNavigationHistory(initialNav);if(state.activeId)openChat(state.activeId,{push:false});
 </script>
