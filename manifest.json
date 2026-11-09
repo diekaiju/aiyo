@@ -1,0 +1,30 @@
+{
+  "id": "./BYOK-Obsidian-Mobile-Workspace-Final.html",
+  "name": "BYOK — Your AI. Your Keys. Your Knowledge.",
+  "short_name": "BYOK",
+  "description": "A private, local-first AI chat and Markdown workspace.",
+  "start_url": "./BYOK-Obsidian-Mobile-Workspace-Final.html",
+  "scope": "./",
+  "display": "standalone",
+  "display_override": ["standalone", "minimal-ui"],
+  "orientation": "any",
+  "background_color": "#0b1020",
+  "theme_color": "#0b1020",
+  "categories": ["productivity", "utilities"],
+  "prefer_related_applications": false,
+  "icons": [
+    {
+      "src": "./byok-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "./byok-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    }
+  ]
+}
+
